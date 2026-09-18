@@ -1,0 +1,56 @@
+name: max-hackathon-backend
+
+x-database-environment: &database-environment
+  DB_HOST: ${DB_HOST:?DB_HOST is required}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_NAME: ${DB_NAME:?DB_NAME is required}
+  DB_USER: ${DB_USER:?DB_USER is required}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+
+services:
+  api:
+    image: ${APP_IMAGE:-max-hackathon-backend:local}
+    build:
+      context: .
+      target: production
+    init: true
+    restart: unless-stopped
+    networks:
+      - shared
+    environment:
+      <<: *database-environment
+      NODE_ENV: production
+      PORT: 3000
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://max-hackathon.kuz.to}
+    ports:
+      - "127.0.0.1:${API_BIND_PORT:-3003}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health', {signal: AbortSignal.timeout(5000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  migrate:
+    image: ${MIGRATION_IMAGE:-max-hackathon-backend-migration:local}
+    build:
+      context: .
+      target: migration
+    profiles: [tools]
+    networks:
+      - shared
+    environment: *database-environment
+
+networks:
+  shared:
+    external: true
+    name: shared

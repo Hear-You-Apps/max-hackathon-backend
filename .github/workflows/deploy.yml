@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: max-hackathon-backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build, migrate and deploy
+        shell: bash
+        env:
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_PORT: ${{ vars.DB_PORT }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_USER: ${{ vars.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+          API_BIND_PORT: ${{ vars.API_BIND_PORT }}
+          APP_IMAGE: max-hackathon-backend:${{ github.sha }}
+          MIGRATION_IMAGE: max-hackathon-backend-migration:${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          compose=(docker compose --env-file /dev/null -p max-hackathon-backend -f compose.yml)
+
+          "${compose[@]}" config --quiet
+          "${compose[@]}" build api migrate
+          "${compose[@]}" run --rm --no-deps migrate
+          "${compose[@]}" up -d --no-build --wait --wait-timeout 120 api
+          "${compose[@]}" ps
