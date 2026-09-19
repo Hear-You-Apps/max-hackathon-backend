@@ -5,7 +5,7 @@ import {
   ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { ErrorResponseDto } from '../../common/dto/error-response.dto';
 import { HealthResponseDto } from './dto/health-response.dto';
 import { HealthService } from './health.service';
 

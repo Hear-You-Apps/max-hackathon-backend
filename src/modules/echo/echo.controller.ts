@@ -5,7 +5,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { ErrorResponseDto } from '../../common/dto/error-response.dto';
 import { EchoDto } from './dto/echo.dto';
 
 @ApiTags('Echo')
