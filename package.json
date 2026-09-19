@@ -7,6 +7,7 @@
   "engines": { "node": ">=24 <25" },
   "scripts": {
     "build": "prisma generate && nest build",
+    "typecheck": "tsc --noEmit --incremental false",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
