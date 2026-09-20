@@ -4,11 +4,13 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from '../../common/dto/error-response.dto';
 import { EchoDto } from './dto/echo.dto';
 
 @ApiTags('Echo')
+@ApiUnauthorizedResponse({ type: ErrorResponseDto })
 @Controller('echo')
 export class EchoController {
   @Post()

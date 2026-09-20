@@ -22,6 +22,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-https://max-hackathon.kuz.to}
+      MAX_BOT_TOKEN: ${MAX_BOT_TOKEN:?MAX_BOT_TOKEN is required}
+      MAX_INIT_DATA_MAX_AGE: ${MAX_INIT_DATA_MAX_AGE:-3600}
     ports:
       - "127.0.0.1:${API_BIND_PORT:-3003}:3000"
     healthcheck:

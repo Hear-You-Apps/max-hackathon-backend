@@ -31,6 +31,16 @@ async function bootstrap() {
     .setTitle('Max Hackathon API')
     .setDescription('HTTP API for Max Hackathon')
     .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'MAX initData',
+        description: 'window.WebApp.initData without additional encoding',
+      },
+      'max',
+    )
+    .addSecurityRequirements('max')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
