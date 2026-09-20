@@ -7,7 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { MaxAuthService } from './max-auth.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
-import type { AuthenticatedRequest } from './user.decorator';
+import type { AuthenticatedRequest } from './auth.types';
 
 @Injectable()
 export class MaxAuthGuard implements CanActivate {
@@ -32,7 +32,7 @@ export class MaxAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing or invalid Bearer token');
     }
 
-    request.user = this.auth.validate(match[1]);
+    request.maxUser = this.auth.validate(match[1]);
     return true;
   }
 }

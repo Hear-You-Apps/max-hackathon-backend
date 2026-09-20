@@ -1,0 +1,3 @@
+export enum ErrorCode {
+  USER_NOT_INITIALIZED = 'USER_NOT_INITIALIZED',
+}

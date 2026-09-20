@@ -72,9 +72,7 @@ async function generate() {
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error('Nest CLI не завершил генерацию.');
   if (options.includes('--dry-run')) {
-    console.log(
-      `Экспорт из modules/index.ts и импорт через './modules' будут добавлены при генерации.`,
-    );
+    console.log('Также будут обновлены modules/index.ts и импорт в AppModule.');
     return;
   }
 
@@ -123,7 +121,7 @@ async function generate() {
     );
   }
   for (const [path, source] of contents) await writeFile(path, source);
-  console.log(`Подключён ${moduleName}: modules/index.ts → AppModule.`);
+  console.log(`Добавлен ${moduleName}.`);
 }
 
 generate().catch((error) => {

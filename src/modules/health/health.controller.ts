@@ -19,7 +19,7 @@ export class HealthController {
   @Public()
   @ApiOperation({
     operationId: 'getHealth',
-    summary: 'Check API and MySQL',
+    summary: 'Проверка доступности API и MySQL',
     security: [],
   })
   @ApiOkResponse({ type: HealthResponseDto })

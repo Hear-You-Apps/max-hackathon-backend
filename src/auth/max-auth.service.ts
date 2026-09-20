@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '../config/environment';
-import type { MaxUser } from './user.decorator';
+import type { MaxUserData } from './auth.types';
 
 @Injectable()
 export class MaxAuthService {
@@ -16,7 +16,7 @@ export class MaxAuthService {
     this.maxAge = config.get('MAX_INIT_DATA_MAX_AGE', { infer: true });
   }
 
-  validate(initData: string): MaxUser {
+  validate(initData: string): MaxUserData {
     const params = this.parseParameters(initData);
     const hash = params.get('hash');
 
@@ -77,7 +77,7 @@ export class MaxAuthService {
     return params;
   }
 
-  private parseUser(rawUser: string): MaxUser {
+  private parseUser(rawUser: string): MaxUserData {
     let user: unknown;
     try {
       user = JSON.parse(rawUser);
@@ -98,14 +98,9 @@ export class MaxAuthService {
       throw new UnauthorizedException('Invalid MAX user');
     }
 
-    const result: MaxUser = { id: user.id, first_name: user.first_name };
+    const result: MaxUserData = { id: user.id, first_name: user.first_name };
 
-    for (const key of [
-      'last_name',
-      'username',
-      'language_code',
-      'photo_url',
-    ] as const) {
+    for (const key of ['last_name', 'username', 'photo_url'] as const) {
       if (!(key in user)) continue;
       const value: unknown = (user as Record<string, unknown>)[key];
 
