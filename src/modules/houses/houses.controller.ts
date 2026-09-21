@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Put,
   Query,
@@ -37,6 +38,8 @@ import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { UpdateHouseNotificationsDto } from './dto/update-house-notifications.dto';
 import { HousesService } from './houses.service';
+import { HouseIdParamsDto } from './dto/house-id-params.dto';
+import { HouseDetailsResponseDto } from './dto/house-details-response.dto';
 
 @ApiTags('Houses')
 @ApiUnauthorizedResponse({ type: ErrorResponseDto })
@@ -183,5 +186,28 @@ export class HousesController {
     @Body() body: UpdateHouseNotificationsDto,
   ): Promise<HouseNotificationsDto> {
     return this.houses.updateNotifications(user.id, body);
+  }
+
+  @Get(':houseId')
+  @ApiOperation({
+    operationId: 'getHouse',
+    summary: 'Получение информации о доме',
+    description:
+      'Информация о доме, контакты, ссылка на оплату и ближайшие события. Требуется членство или актуальная заявка на присоединение. При отозванном доступе дом недоступен.',
+  })
+  @ApiOkResponse({ type: HouseDetailsResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID дома',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Дом не найден или недоступен (${ErrorCode.HOUSE_NOT_AVAILABLE})`,
+  })
+  findOne(
+    @User() user: UserProfileDto,
+    @Param() params: HouseIdParamsDto,
+  ): Promise<HouseDetailsResponseDto> {
+    return this.houses.findOne(user.id, params.houseId);
   }
 }

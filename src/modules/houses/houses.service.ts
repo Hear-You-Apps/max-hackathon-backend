@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
-import type { HouseInvitation } from '@generated/prisma/client';
+import type {
+  HouseInvitation,
+  HouseJoinRequest,
+  HouseMembership,
+} from '@generated/prisma/client';
 import {
   ApartmentVerificationStatus,
   HouseJoinRequestStatus,
@@ -20,6 +24,7 @@ import type {
   MyHousesResponseDto,
 } from './dto/my-houses-response.dto';
 import type { JoinHouseDto } from './dto/join-house.dto';
+import type { HouseDetailsResponseDto } from './dto/house-details-response.dto';
 import type { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import type { UpdateHouseNotificationsDto } from './dto/update-house-notifications.dto';
 import { HousePermission } from './enums/house-permission.enum';
@@ -61,6 +66,92 @@ const readPermissions = [
 @Injectable()
 export class HousesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findOne(
+    userId: number,
+    houseId: number,
+  ): Promise<HouseDetailsResponseDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const membership = await tx.houseMembership.findUnique({
+          where: { userId_houseId: { userId, houseId } },
+          select: { status: true, lastLeftAt: true },
+        });
+        let canRead = membership?.status === HouseMembershipStatus.approved;
+
+        if (!canRead && membership?.status !== HouseMembershipStatus.revoked) {
+          const requests = await tx.houseJoinRequest.findMany({
+            where: { userId, houseId },
+            orderBy: { id: 'desc' },
+            distinct: ['apartmentNumber'],
+            select: { apartmentNumber: true, status: true, createdAt: true },
+          });
+          canRead = requests.some((request) =>
+            this.isCurrentJoinRequest(request, membership),
+          );
+        }
+
+        if (!canRead) this.throwHouseNotAvailable();
+
+        const now = new Date();
+        const house = await tx.house.findUnique({
+          where: { id: houseId },
+          select: {
+            ...houseSelect,
+            yearBuilt: true,
+            paymentUrl: true,
+            contacts: {
+              orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+              select: {
+                id: true,
+                type: true,
+                name: true,
+                phone: true,
+                address: true,
+                workingHours: true,
+                messengerUrl: true,
+              },
+            },
+            events: {
+              where: {
+                isCancelled: false,
+                OR: [
+                  { endsAt: { gt: now } },
+                  { endsAt: null, startsAt: { gte: now } },
+                ],
+              },
+              orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+              take: 3,
+              select: {
+                id: true,
+                type: true,
+                title: true,
+                description: true,
+                startsAt: true,
+                endsAt: true,
+                location: true,
+                isCancelled: true,
+              },
+            },
+          },
+        });
+        if (!house) this.throwHouseNotAvailable();
+
+        const { contacts, events, paymentUrl, ...info } = house;
+        return {
+          house: info,
+          contacts,
+          utilities: { paymentUrl },
+          upcomingEvents: events.map((event) => ({
+            ...event,
+            startsAt: event.startsAt.toISOString(),
+            endsAt: event.endsAt?.toISOString() ?? null,
+          })),
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
 
   async updateNotifications(
     userId: number,
@@ -402,21 +493,12 @@ export class HousesService {
               : [],
         })),
       joinRequests: joinRequests
-        .filter((request) => {
-          if (
-            request.status !== HouseJoinRequestStatus.pending &&
-            request.status !== HouseJoinRequestStatus.rejected
-          ) {
-            return false;
-          }
-
-          const membership = membershipsByHouseId.get(request.houseId);
-          if (!membership) return true;
-          if (membership.lastLeftAt) {
-            return request.createdAt > membership.lastLeftAt;
-          }
-          return membership.status !== HouseMembershipStatus.left;
-        })
+        .filter((request) =>
+          this.isCurrentJoinRequest(
+            request,
+            membershipsByHouseId.get(request.houseId),
+          ),
+        )
         .map((request) =>
           this.toJoinRequestResponse(
             request,
@@ -424,6 +506,33 @@ export class HousesService {
           ),
         ),
     };
+  }
+
+  private isCurrentJoinRequest(
+    request: Pick<HouseJoinRequest, 'status' | 'createdAt'>,
+    membership:
+      Pick<HouseMembership, 'status' | 'lastLeftAt'> | null | undefined,
+  ): boolean {
+    if (
+      request.status !== HouseJoinRequestStatus.pending &&
+      request.status !== HouseJoinRequestStatus.rejected
+    ) {
+      return false;
+    }
+    if (!membership) return true;
+    if (membership.lastLeftAt) {
+      return request.createdAt > membership.lastLeftAt;
+    }
+    return membership.status !== HouseMembershipStatus.left;
+  }
+
+  private throwHouseNotAvailable(): never {
+    throw new NotFoundException({
+      statusCode: HttpStatus.NOT_FOUND,
+      error: 'Not Found',
+      code: ErrorCode.HOUSE_NOT_AVAILABLE,
+      message: 'Дом не найден или недоступен',
+    });
   }
 
   private toJoinRequestResponse(

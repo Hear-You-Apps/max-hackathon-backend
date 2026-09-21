@@ -53,6 +53,24 @@ enum HouseJoinRequestStatus {
   cancelled
 }
 
+enum HouseContactType {
+  dispatcher
+  emergency
+  plumber
+  electrician
+  representative
+  passport_office
+  other
+}
+
+enum HouseEventType {
+  water_outage
+  power_outage
+  cleaning
+  maintenance
+  other
+}
+
 model House {
   id                    Int     @id @default(autoincrement()) @db.UnsignedInt
   address               String  @db.VarChar(500)
@@ -60,13 +78,51 @@ model House {
   adminContactUrl       String? @map("admin_contact_url") @db.VarChar(2048)
   apartmentsCount       Int?    @map("apartments_count") @db.UnsignedInt
   entrancesCount        Int?    @map("entrances_count") @db.UnsignedInt
+  yearBuilt             Int?    @map("year_built") @db.UnsignedSmallInt
+  paymentUrl            String? @map("payment_url") @db.VarChar(2048)
 
   memberships  HouseMembership[]
   apartments   Apartment[]
   joinRequests HouseJoinRequest[]
   invitations  HouseInvitation[]
+  contacts     HouseContact[]
+  events       HouseEvent[]
 
   @@map("houses")
+}
+
+model HouseContact {
+  id           Int              @id @default(autoincrement()) @db.UnsignedInt
+  houseId      Int              @map("house_id") @db.UnsignedInt
+  type         HouseContactType @default(other)
+  name         String           @db.VarChar(255)
+  phone        String?          @db.VarChar(64)
+  address      String?          @db.VarChar(500)
+  workingHours String?          @map("working_hours") @db.VarChar(255)
+  messengerUrl String?          @map("messenger_url") @db.VarChar(2048)
+  sortOrder    Int              @default(0) @map("sort_order") @db.UnsignedInt
+
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([houseId, sortOrder, id])
+  @@map("house_contacts")
+}
+
+model HouseEvent {
+  id          Int            @id @default(autoincrement()) @db.UnsignedInt
+  houseId     Int            @map("house_id") @db.UnsignedInt
+  type        HouseEventType @default(other)
+  title       String         @db.VarChar(255)
+  description String?        @db.Text
+  startsAt    DateTime       @map("starts_at") @db.DateTime(3)
+  endsAt      DateTime?      @map("ends_at") @db.DateTime(3)
+  location    String?        @db.VarChar(500)
+  isCancelled Boolean        @default(false) @map("is_cancelled")
+
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([houseId, isCancelled, startsAt, id])
+  @@map("house_events")
 }
 
 model HouseInvitation {
