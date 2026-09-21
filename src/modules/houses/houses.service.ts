@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   GoneException,
   HttpStatus,
   Injectable,
@@ -6,12 +7,18 @@ import {
 } from '@nestjs/common';
 import { ErrorCode } from '../../common/enums/error-code.enum';
 import { Prisma } from '../../generated/prisma/client';
+import type { HouseInvitation } from '../../generated/prisma/client';
 import {
+  ApartmentVerificationStatus,
   HouseJoinRequestStatus,
   HouseMembershipStatus,
 } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { MyHousesResponseDto } from './dto/my-houses-response.dto';
+import type {
+  MyHouseJoinRequestDto,
+  MyHousesResponseDto,
+} from './dto/my-houses-response.dto';
+import type { JoinHouseDto } from './dto/join-house.dto';
 import type { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousePermission } from './enums/house-permission.enum';
 
@@ -24,6 +31,25 @@ const houseSelect = {
   entrancesCount: true,
 } satisfies Prisma.HouseSelect;
 
+const joinRequestSelect = {
+  id: true,
+  houseId: true,
+  apartmentNumber: true,
+  displayName: true,
+  relationship: true,
+  status: true,
+  createdAt: true,
+  rejectionReason: true,
+  notifyMeetings: true,
+  notifyRequests: true,
+  house: { select: houseSelect },
+} satisfies Prisma.HouseJoinRequestSelect;
+
+type JoinRequestWithHouse = Prisma.HouseJoinRequestGetPayload<{
+  select: typeof joinRequestSelect;
+}>;
+type InvitationValidity = Pick<HouseInvitation, 'expiresAt' | 'revokedAt'>;
+
 const readPermissions = [
   HousePermission.HOUSE_READ,
   HousePermission.MEETINGS_READ,
@@ -33,6 +59,126 @@ const readPermissions = [
 @Injectable()
 export class HousesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async join(
+    userId: number,
+    body: JoinHouseDto,
+  ): Promise<MyHouseJoinRequestDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const users = await tx.$queryRaw<{ id: number }[]>`
+        SELECT id FROM users WHERE id = ${userId} FOR UPDATE
+      `;
+        if (!users.length) {
+          throw new ConflictException({
+            statusCode: HttpStatus.CONFLICT,
+            error: 'Conflict',
+            code: ErrorCode.USER_NOT_INITIALIZED,
+            message: 'Сначала выполните инициализацию пользователя',
+          });
+        }
+
+        await tx.$queryRaw`
+        SELECT id FROM house_invitations WHERE code = ${body.code} FOR UPDATE
+      `;
+        const invitation = await tx.houseInvitation.findUnique({
+          where: { code: body.code },
+        });
+        this.checkInvitation(invitation);
+
+        await tx.$queryRaw`
+        SELECT id FROM house_memberships
+        WHERE user_id = ${userId} AND house_id = ${invitation.houseId} FOR UPDATE
+      `;
+        const membership = await tx.houseMembership.findUnique({
+          where: { userId_houseId: { userId, houseId: invitation.houseId } },
+          select: { id: true, status: true, lastLeftAt: true },
+        });
+
+        if (
+          membership?.status === HouseMembershipStatus.left &&
+          !membership.lastLeftAt
+        ) {
+          throw new ConflictException({
+            statusCode: HttpStatus.CONFLICT,
+            error: 'Conflict',
+            code: ErrorCode.HOUSE_REJOIN_UNAVAILABLE,
+            message:
+              'Не определена дата выхода из дома. Обратитесь к администратору',
+          });
+        }
+
+        if (membership?.status === HouseMembershipStatus.approved) {
+          const apartment = await tx.apartmentMembership.findFirst({
+            where: {
+              membershipId: membership.id,
+              apartment: { number: body.apartmentNumber },
+              verificationStatus: { not: ApartmentVerificationStatus.rejected },
+            },
+            select: { apartmentId: true },
+          });
+          if (apartment) {
+            throw new ConflictException({
+              statusCode: HttpStatus.CONFLICT,
+              error: 'Conflict',
+              code: ErrorCode.APARTMENT_ALREADY_LINKED,
+              message: 'Эта квартира уже привязана к вашему аккаунту',
+            });
+          }
+        }
+
+        const pendingRequest = await tx.houseJoinRequest.findFirst({
+          where: {
+            userId,
+            houseId: invitation.houseId,
+            apartmentNumber: body.apartmentNumber,
+            status: HouseJoinRequestStatus.pending,
+            ...(membership?.lastLeftAt && {
+              createdAt: { gt: membership.lastLeftAt },
+            }),
+          },
+          select: { id: true },
+        });
+        if (pendingRequest) {
+          throw new ConflictException({
+            statusCode: HttpStatus.CONFLICT,
+            error: 'Conflict',
+            code: ErrorCode.JOIN_REQUEST_ALREADY_EXISTS,
+            message: 'Заявка на эту квартиру уже ожидает подтверждения',
+          });
+        }
+
+        this.checkInvitation(invitation);
+        const createdAt = new Date();
+        if (membership?.lastLeftAt && createdAt <= membership.lastLeftAt) {
+          throw new ConflictException({
+            statusCode: HttpStatus.CONFLICT,
+            error: 'Conflict',
+            code: ErrorCode.HOUSE_REJOIN_UNAVAILABLE,
+            message:
+              'Дата выхода из дома ещё не прошла. Повторите запрос позже',
+          });
+        }
+        const request = await tx.houseJoinRequest.create({
+          data: {
+            userId,
+            houseId: invitation.houseId,
+            apartmentNumber: body.apartmentNumber,
+            displayName: body.displayName,
+            relationship: body.relationship,
+            status: HouseJoinRequestStatus.pending,
+            createdAt,
+            notifyMeetings: body.notifications.meetings,
+            notifyRequests: body.notifications.requests,
+          },
+          select: joinRequestSelect,
+        });
+
+        return this.toJoinRequestResponse(request, membership?.status);
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+    );
+  }
 
   async search(userId: number, code: string): Promise<SearchHouseResponseDto> {
     const invitation = await this.prisma.houseInvitation.findUnique({
@@ -56,32 +202,7 @@ export class HousesService {
       },
     });
 
-    if (!invitation) {
-      throw new NotFoundException({
-        statusCode: HttpStatus.NOT_FOUND,
-        error: 'Not Found',
-        code: ErrorCode.INVITATION_NOT_FOUND,
-        message: 'Дом с таким кодом приглашения не найден',
-      });
-    }
-    if (invitation.revokedAt) {
-      throw new GoneException({
-        statusCode: HttpStatus.GONE,
-        error: 'Gone',
-        code: ErrorCode.INVITATION_REVOKED,
-        message:
-          'Приглашение отозвано. Запросите новый код у администратора дома',
-      });
-    }
-    if (invitation.expiresAt.getTime() <= Date.now()) {
-      throw new GoneException({
-        statusCode: HttpStatus.GONE,
-        error: 'Gone',
-        code: ErrorCode.INVITATION_EXPIRED,
-        message:
-          'Срок действия приглашения истёк. Запросите новый код у администратора дома',
-      });
-    }
+    this.checkInvitation(invitation);
 
     const { houses, joinRequests } = await this.findMine(
       userId,
@@ -128,19 +249,7 @@ export class HousesService {
           where: { userId, houseId },
           orderBy: { id: 'desc' },
           distinct: ['houseId', 'apartmentNumber'],
-          select: {
-            id: true,
-            houseId: true,
-            apartmentNumber: true,
-            displayName: true,
-            relationship: true,
-            status: true,
-            createdAt: true,
-            rejectionReason: true,
-            notifyMeetings: true,
-            notifyRequests: true,
-            house: { select: houseSelect },
-          },
+          select: joinRequestSelect,
         }),
       ],
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
@@ -199,24 +308,66 @@ export class HousesService {
           }
           return membership.status !== HouseMembershipStatus.left;
         })
-        .map((request) => ({
-          id: request.id,
-          house: request.house,
-          apartmentNumber: request.apartmentNumber,
-          displayName: request.displayName,
-          relationship: request.relationship,
-          status: request.status,
-          rejectionReason: request.rejectionReason,
-          notifications: {
-            meetings: request.notifyMeetings,
-            requests: request.notifyRequests,
-          },
-          permissions:
-            membershipsByHouseId.get(request.houseId)?.status ===
-            HouseMembershipStatus.revoked
-              ? []
-              : [...readPermissions],
-        })),
+        .map((request) =>
+          this.toJoinRequestResponse(
+            request,
+            membershipsByHouseId.get(request.houseId)?.status,
+          ),
+        ),
     };
+  }
+
+  private toJoinRequestResponse(
+    request: JoinRequestWithHouse,
+    membershipStatus?: HouseMembershipStatus,
+  ): MyHouseJoinRequestDto {
+    return {
+      id: request.id,
+      house: request.house,
+      apartmentNumber: request.apartmentNumber,
+      displayName: request.displayName,
+      relationship: request.relationship,
+      status: request.status,
+      rejectionReason: request.rejectionReason,
+      notifications: {
+        meetings: request.notifyMeetings,
+        requests: request.notifyRequests,
+      },
+      permissions:
+        membershipStatus === HouseMembershipStatus.revoked
+          ? []
+          : [...readPermissions],
+    };
+  }
+
+  private checkInvitation(
+    invitation: InvitationValidity | null,
+  ): asserts invitation is InvitationValidity {
+    if (!invitation) {
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: 'Not Found',
+        code: ErrorCode.INVITATION_NOT_FOUND,
+        message: 'Дом с таким кодом приглашения не найден',
+      });
+    }
+    if (invitation.revokedAt) {
+      throw new GoneException({
+        statusCode: HttpStatus.GONE,
+        error: 'Gone',
+        code: ErrorCode.INVITATION_REVOKED,
+        message:
+          'Приглашение отозвано. Запросите новый код у администратора дома',
+      });
+    }
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      throw new GoneException({
+        statusCode: HttpStatus.GONE,
+        error: 'Gone',
+        code: ErrorCode.INVITATION_EXPIRED,
+        message:
+          'Срок действия приглашения истёк. Запросите новый код у администратора дома',
+      });
+    }
   }
 }

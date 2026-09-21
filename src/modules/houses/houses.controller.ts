@@ -1,6 +1,7 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import {
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiGoneResponse,
   ApiNotFoundResponse,
@@ -13,7 +14,11 @@ import { ErrorResponseDto } from '../../common/dto/error-response.dto';
 import { ErrorCode } from '../../common/enums/error-code.enum';
 import { User } from '../users/decorators/user.decorator';
 import type { UserProfileDto } from '../users/dto/user-profile.dto';
-import { MyHousesResponseDto } from './dto/my-houses-response.dto';
+import {
+  MyHouseJoinRequestDto,
+  MyHousesResponseDto,
+} from './dto/my-houses-response.dto';
+import { JoinHouseDto } from './dto/join-house.dto';
 import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousesService } from './houses.service';
@@ -61,5 +66,34 @@ export class HousesController {
     @Query() query: SearchHouseQueryDto,
   ): Promise<SearchHouseResponseDto> {
     return this.houses.search(user.id, query.code);
+  }
+
+  @Post('join')
+  @ApiOperation({
+    operationId: 'joinHouse',
+    summary: 'Подача заявки на присоединение к дому',
+  })
+  @ApiCreatedResponse({ type: MyHouseJoinRequestDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверные данные заявки',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Приглашение не найдено (${ErrorCode.INVITATION_NOT_FOUND})`,
+  })
+  @ApiGoneResponse({
+    type: ErrorResponseDto,
+    description: `Приглашение истекло (${ErrorCode.INVITATION_EXPIRED}) или отозвано (${ErrorCode.INVITATION_REVOKED})`,
+  })
+  @ApiConflictResponse({
+    type: ErrorResponseDto,
+    description: `Пользователь не инициализирован (${ErrorCode.USER_NOT_INITIALIZED}), заявка уже ожидает подтверждения (${ErrorCode.JOIN_REQUEST_ALREADY_EXISTS}), квартира уже привязана (${ErrorCode.APARTMENT_ALREADY_LINKED}) или не определена дата предыдущего выхода (${ErrorCode.HOUSE_REJOIN_UNAVAILABLE})`,
+  })
+  join(
+    @User() user: UserProfileDto,
+    @Body() body: JoinHouseDto,
+  ): Promise<MyHouseJoinRequestDto> {
+    return this.houses.join(user.id, body);
   }
 }
