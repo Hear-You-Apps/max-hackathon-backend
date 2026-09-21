@@ -11,6 +11,7 @@ import {
   InitModule,
   UsersModule,
   HousesModule,
+  DebugModule,
 } from './modules';
 import { UserAccountGuard } from '@users/guards/user-account.guard';
 
@@ -24,6 +25,7 @@ import { UserAccountGuard } from '@users/guards/user-account.guard';
     InitModule,
     UsersModule,
     HousesModule,
+    DebugModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: MaxAuthGuard },
