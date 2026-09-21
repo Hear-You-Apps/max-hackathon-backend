@@ -37,7 +37,9 @@ import { LeaveHouseMembershipDto } from './dto/leave-house-membership.dto';
 import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { UpdateHouseNotificationsDto } from './dto/update-house-notifications.dto';
-import { HousesService } from './houses.service';
+import { HousesQueryService } from './services/houses-query.service';
+import { HouseJoinRequestsService } from './services/house-join-requests.service';
+import { HouseMembershipsService } from './services/house-memberships.service';
 import { HouseIdParamsDto } from './dto/house-id-params.dto';
 import { HouseDetailsResponseDto } from './dto/house-details-response.dto';
 
@@ -49,7 +51,11 @@ import { HouseDetailsResponseDto } from './dto/house-details-response.dto';
 })
 @Controller('houses')
 export class HousesController {
-  constructor(private readonly houses: HousesService) {}
+  constructor(
+    private readonly houses: HousesQueryService,
+    private readonly joinRequests: HouseJoinRequestsService,
+    private readonly memberships: HouseMembershipsService,
+  ) {}
 
   @Get('me')
   @ApiOperation({
@@ -112,7 +118,7 @@ export class HousesController {
     @User() user: UserProfileDto,
     @Body() body: JoinHouseDto,
   ): Promise<MyHouseJoinRequestDto> {
-    return this.houses.join(user.id, body);
+    return this.joinRequests.join(user.id, body);
   }
 
   @Delete('leave')
@@ -138,7 +144,7 @@ export class HousesController {
     @User() user: UserProfileDto,
     @Body() body: LeaveHouseDto,
   ): Promise<void> {
-    return this.houses.leave(user.id, body.requestId);
+    return this.joinRequests.cancelJoinRequest(user.id, body.requestId);
   }
 
   @Delete('membership')
@@ -162,7 +168,7 @@ export class HousesController {
     @User() user: UserProfileDto,
     @Body() body: LeaveHouseMembershipDto,
   ): Promise<void> {
-    return this.houses.leaveMembership(user.id, body.houseId);
+    return this.memberships.leaveMembership(user.id, body.houseId);
   }
 
   @Put('notifications')
@@ -185,7 +191,7 @@ export class HousesController {
     @User() user: UserProfileDto,
     @Body() body: UpdateHouseNotificationsDto,
   ): Promise<HouseNotificationsDto> {
-    return this.houses.updateNotifications(user.id, body);
+    return this.memberships.updateNotifications(user.id, body);
   }
 
   @Get(':houseId')
