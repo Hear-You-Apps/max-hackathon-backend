@@ -30,6 +30,7 @@ import {
 } from './dto/my-houses-response.dto';
 import { JoinHouseDto } from './dto/join-house.dto';
 import { LeaveHouseDto } from './dto/leave-house.dto';
+import { LeaveHouseMembershipDto } from './dto/leave-house-membership.dto';
 import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousesService } from './houses.service';
@@ -132,5 +133,29 @@ export class HousesController {
     @Body() body: LeaveHouseDto,
   ): Promise<void> {
     return this.houses.leave(user.id, body.requestId);
+  }
+
+  @Delete('membership')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'leaveHouseMembership',
+    summary: 'Выход из дома',
+    description:
+      'Выход из подтверждённого дома или удаление дома после исключения. Отменяет ожидающие заявки в этот дом.',
+  })
+  @ApiNoContentResponse({ description: 'Пользователь вышел из дома' })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID дома',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Пользователь не состоит в этом доме (${ErrorCode.HOUSE_MEMBERSHIP_NOT_FOUND})`,
+  })
+  leaveMembership(
+    @User() user: UserProfileDto,
+    @Body() body: LeaveHouseMembershipDto,
+  ): Promise<void> {
+    return this.houses.leaveMembership(user.id, body.houseId);
   }
 }
