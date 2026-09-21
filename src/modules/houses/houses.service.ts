@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  GoneException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ErrorCode } from '../../common/enums/error-code.enum';
 import { Prisma } from '../../generated/prisma/client';
 import {
   HouseJoinRequestStatus,
@@ -6,6 +12,7 @@ import {
 } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { MyHousesResponseDto } from './dto/my-houses-response.dto';
+import type { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousePermission } from './enums/house-permission.enum';
 
 const houseSelect = {
@@ -27,11 +34,75 @@ const readPermissions = [
 export class HousesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMine(userId: number): Promise<MyHousesResponseDto> {
+  async search(userId: number, code: string): Promise<SearchHouseResponseDto> {
+    const invitation = await this.prisma.houseInvitation.findUnique({
+      where: { code },
+      select: {
+        houseId: true,
+        expiresAt: true,
+        revokedAt: true,
+        house: {
+          select: {
+            ...houseSelect,
+            _count: {
+              select: {
+                memberships: {
+                  where: { status: HouseMembershipStatus.approved },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: 'Not Found',
+        code: ErrorCode.INVITATION_NOT_FOUND,
+        message: 'Дом с таким кодом приглашения не найден',
+      });
+    }
+    if (invitation.revokedAt) {
+      throw new GoneException({
+        statusCode: HttpStatus.GONE,
+        error: 'Gone',
+        code: ErrorCode.INVITATION_REVOKED,
+        message:
+          'Приглашение отозвано. Запросите новый код у администратора дома',
+      });
+    }
+    if (invitation.expiresAt.getTime() <= Date.now()) {
+      throw new GoneException({
+        statusCode: HttpStatus.GONE,
+        error: 'Gone',
+        code: ErrorCode.INVITATION_EXPIRED,
+        message:
+          'Срок действия приглашения истёк. Запросите новый код у администратора дома',
+      });
+    }
+
+    const { houses, joinRequests } = await this.findMine(
+      userId,
+      invitation.houseId,
+    );
+    const { _count, ...house } = invitation.house;
+    return {
+      house: { ...house, residentsCount: _count.memberships },
+      membership: houses[0]?.membership ?? null,
+      joinRequest: joinRequests[0] ?? null,
+    };
+  }
+
+  async findMine(
+    userId: number,
+    houseId?: number,
+  ): Promise<MyHousesResponseDto> {
     const [memberships, joinRequests] = await this.prisma.$transaction(
       [
         this.prisma.houseMembership.findMany({
-          where: { userId },
+          where: { userId, houseId },
           orderBy: { id: 'asc' },
           select: {
             id: true,
@@ -54,7 +125,7 @@ export class HousesService {
           },
         }),
         this.prisma.houseJoinRequest.findMany({
-          where: { userId },
+          where: { userId, houseId },
           orderBy: { id: 'desc' },
           distinct: ['houseId', 'apartmentNumber'],
           select: {

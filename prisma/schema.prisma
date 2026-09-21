@@ -64,8 +64,22 @@ model House {
   memberships  HouseMembership[]
   apartments   Apartment[]
   joinRequests HouseJoinRequest[]
+  invitations  HouseInvitation[]
 
   @@map("houses")
+}
+
+model HouseInvitation {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  houseId   Int       @map("house_id") @db.UnsignedInt
+  code      String    @unique @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt DateTime? @map("revoked_at") @db.DateTime(3)
+
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([houseId])
+  @@map("house_invitations")
 }
 
 model HouseMembership {

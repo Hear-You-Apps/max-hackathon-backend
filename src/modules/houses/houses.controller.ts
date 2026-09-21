@@ -1,6 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiConflictResponse,
+  ApiBadRequestResponse,
+  ApiGoneResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -11,6 +14,8 @@ import { ErrorCode } from '../../common/enums/error-code.enum';
 import { User } from '../users/decorators/user.decorator';
 import type { UserProfileDto } from '../users/dto/user-profile.dto';
 import { MyHousesResponseDto } from './dto/my-houses-response.dto';
+import { SearchHouseQueryDto } from './dto/search-house-query.dto';
+import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousesService } from './houses.service';
 
 @ApiTags('Houses')
@@ -31,5 +36,30 @@ export class HousesController {
   @ApiOkResponse({ type: MyHousesResponseDto })
   findMine(@User() user: UserProfileDto): Promise<MyHousesResponseDto> {
     return this.houses.findMine(user.id);
+  }
+
+  @Get('search')
+  @ApiOperation({
+    operationId: 'searchHouse',
+    summary: 'Поиск дома по коду приглашения',
+  })
+  @ApiOkResponse({ type: SearchHouseResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный формат кода приглашения',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Приглашение не найдено (${ErrorCode.INVITATION_NOT_FOUND})`,
+  })
+  @ApiGoneResponse({
+    type: ErrorResponseDto,
+    description: `Приглашение истекло (${ErrorCode.INVITATION_EXPIRED}) или отозвано (${ErrorCode.INVITATION_REVOKED})`,
+  })
+  search(
+    @User() user: UserProfileDto,
+    @Query() query: SearchHouseQueryDto,
+  ): Promise<SearchHouseResponseDto> {
+    return this.houses.search(user.id, query.code);
   }
 }
