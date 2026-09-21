@@ -5,7 +5,13 @@ import { AuthModule } from './auth/auth.module';
 import { MaxAuthGuard } from './auth/max-auth.guard';
 import { validateEnvironment } from './config/environment';
 import { PrismaModule } from './prisma/prisma.module';
-import { HealthModule, EchoModule, InitModule, UsersModule } from './modules';
+import {
+  HealthModule,
+  EchoModule,
+  InitModule,
+  UsersModule,
+  HousesModule,
+} from './modules';
 import { UserAccountGuard } from './modules/users/guards/user-account.guard';
 
 @Module({
@@ -17,6 +23,7 @@ import { UserAccountGuard } from './modules/users/guards/user-account.guard';
     EchoModule,
     InitModule,
     UsersModule,
+    HousesModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: MaxAuthGuard },

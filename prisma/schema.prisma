@@ -16,5 +16,133 @@ model User {
   username  String? @db.VarChar(255)
   photoUrl  String? @map("photo_url") @db.Text
 
+  houseMemberships  HouseMembership[]
+  houseJoinRequests HouseJoinRequest[]
+
   @@map("users")
+}
+
+enum HouseMembershipStatus {
+  approved
+  revoked
+  left
+}
+
+enum HouseRole {
+  resident
+  organizer
+  house_council
+  house_admin
+}
+
+enum ApartmentRelationship {
+  owner
+  tenant
+}
+
+enum ApartmentVerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum HouseJoinRequestStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+model House {
+  id                    Int     @id @default(autoincrement()) @db.UnsignedInt
+  address               String  @db.VarChar(500)
+  managementCompanyName String? @map("management_company_name") @db.VarChar(255)
+  adminContactUrl       String? @map("admin_contact_url") @db.VarChar(2048)
+  apartmentsCount       Int?    @map("apartments_count") @db.UnsignedInt
+  entrancesCount        Int?    @map("entrances_count") @db.UnsignedInt
+
+  memberships  HouseMembership[]
+  apartments   Apartment[]
+  joinRequests HouseJoinRequest[]
+
+  @@map("houses")
+}
+
+model HouseMembership {
+  id               Int                   @id @default(autoincrement()) @db.UnsignedInt
+  userId           Int                   @map("user_id") @db.UnsignedInt
+  houseId          Int                   @map("house_id") @db.UnsignedInt
+  status           HouseMembershipStatus @default(approved)
+  lastLeftAt       DateTime?             @map("last_left_at") @db.DateTime(3)
+  revocationReason String?               @map("revocation_reason") @db.Text
+  displayName      String                @map("display_name") @db.VarChar(255)
+  notifyMeetings   Boolean               @default(false) @map("notify_meetings")
+  notifyRequests   Boolean               @default(false) @map("notify_requests")
+
+  user       User                  @relation(fields: [userId], references: [id])
+  house      House                 @relation(fields: [houseId], references: [id])
+  roles      HouseMemberRole[]
+  apartments ApartmentMembership[]
+
+  @@unique([userId, houseId])
+  @@unique([id, houseId])
+  @@map("house_memberships")
+}
+
+model HouseMemberRole {
+  membershipId Int       @map("membership_id") @db.UnsignedInt
+  role         HouseRole
+
+  membership HouseMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, role])
+  @@map("house_member_roles")
+}
+
+model Apartment {
+  id      Int    @id @default(autoincrement()) @db.UnsignedInt
+  houseId Int    @map("house_id") @db.UnsignedInt
+  number  String @db.VarChar(32)
+
+  house       House                 @relation(fields: [houseId], references: [id])
+  memberships ApartmentMembership[]
+
+  @@unique([houseId, number])
+  @@unique([id, houseId])
+  @@map("apartments")
+}
+
+model ApartmentMembership {
+  membershipId       Int                         @map("membership_id") @db.UnsignedInt
+  apartmentId        Int                         @map("apartment_id") @db.UnsignedInt
+  houseId            Int                         @map("house_id") @db.UnsignedInt
+  relationship       ApartmentRelationship
+  verificationStatus ApartmentVerificationStatus @default(pending) @map("verification_status")
+
+  membership HouseMembership @relation(fields: [membershipId, houseId], references: [id, houseId])
+  apartment  Apartment       @relation(fields: [apartmentId, houseId], references: [id, houseId])
+
+  @@id([membershipId, apartmentId])
+  @@map("apartment_memberships")
+}
+
+model HouseJoinRequest {
+  id              Int                    @id @default(autoincrement()) @db.UnsignedInt
+  userId          Int                    @map("user_id") @db.UnsignedInt
+  houseId         Int                    @map("house_id") @db.UnsignedInt
+  apartmentNumber String                 @map("apartment_number") @db.VarChar(32)
+  displayName     String                 @map("display_name") @db.VarChar(255)
+  relationship    ApartmentRelationship
+  status          HouseJoinRequestStatus @default(pending)
+  createdAt       DateTime               @default(now()) @map("created_at") @db.DateTime(3)
+  rejectionReason String?                @map("rejection_reason") @db.Text
+  notifyMeetings  Boolean                @default(false) @map("notify_meetings")
+  notifyRequests  Boolean                @default(false) @map("notify_requests")
+
+  user  User  @relation(fields: [userId], references: [id])
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([userId, status])
+  @@index([houseId, status])
+  @@map("house_join_requests")
 }
