@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { MaxUserData } from '../../auth/auth.types';
-import { UsersService } from '../users/users.service';
+import type { MaxUserData } from '@auth/auth.types';
+import { UsersService } from '@users/users.service';
 import { HousesService } from '../houses/houses.service';
 import type { InitResponseDto } from './dto/init-response.dto';
 

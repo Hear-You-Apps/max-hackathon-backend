@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Environment } from '../config/environment';
+import { Environment } from '@config/environment';
 import type { MaxUserData } from './auth.types';
 
 @Injectable()

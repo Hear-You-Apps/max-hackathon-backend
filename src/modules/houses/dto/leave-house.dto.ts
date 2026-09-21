@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, Max, Min } from 'class-validator';
-import { MYSQL_UNSIGNED_INT_MAX } from '../../../common/constants/database.constants';
+import { MYSQL_UNSIGNED_INT_MAX } from '@common/constants/database.constants';
 
 export class LeaveHouseDto {
   @ApiProperty({

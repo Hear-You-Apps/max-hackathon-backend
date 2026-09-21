@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { MaxUserData } from '../../auth/auth.types';
-import { Prisma } from '../../generated/prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import type { MaxUserData } from '@auth/auth.types';
+import { Prisma } from '@generated/prisma/client';
+import { PrismaService } from '@prisma/prisma.service';
 import type { UserProfileDto } from './dto/user-profile.dto';
 
 const profileSelect = {

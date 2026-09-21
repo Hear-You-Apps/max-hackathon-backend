@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthModule } from './auth/auth.module';
-import { MaxAuthGuard } from './auth/max-auth.guard';
-import { validateEnvironment } from './config/environment';
-import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from '@auth/auth.module';
+import { MaxAuthGuard } from '@auth/max-auth.guard';
+import { validateEnvironment } from '@config/environment';
+import { PrismaModule } from '@prisma/prisma.module';
 import {
   HealthModule,
   EchoModule,
@@ -12,7 +12,7 @@ import {
   UsersModule,
   HousesModule,
 } from './modules';
-import { UserAccountGuard } from './modules/users/guards/user-account.guard';
+import { UserAccountGuard } from '@users/guards/user-account.guard';
 
 @Module({
   imports: [

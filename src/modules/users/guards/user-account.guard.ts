@@ -6,10 +6,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCode } from '../../../common/enums/error-code.enum';
+import { ErrorCode } from '@common/enums/error-code.enum';
 import { UsersService } from '../users.service';
 import { ALLOW_UNINITIALIZED_KEY } from '../decorators/allow-uninitialized.decorator';
-import { IS_PUBLIC_KEY } from '../../../auth/public.decorator';
+import { IS_PUBLIC_KEY } from '@auth/public.decorator';
 import type { UserRequest } from '../users.types';
 
 @Injectable()

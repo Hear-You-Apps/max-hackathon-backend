@@ -5,10 +5,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AllowUninitialized } from '../users/decorators/allow-uninitialized.decorator';
-import { MaxUser } from '../../auth/max-user.decorator';
-import type { MaxUserData } from '../../auth/auth.types';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto';
+import { AllowUninitialized } from '@users/decorators/allow-uninitialized.decorator';
+import { MaxUser } from '@auth/max-user.decorator';
+import type { MaxUserData } from '@auth/auth.types';
+import { ErrorResponseDto } from '@common/dto/error-response.dto';
 import { InitResponseDto } from './dto/init-response.dto';
 import { InitService } from './init.service';
 

@@ -7,8 +7,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto';
-import { ErrorCode } from '../../common/enums/error-code.enum';
+import { ErrorResponseDto } from '@common/dto/error-response.dto';
+import { ErrorCode } from '@common/enums/error-code.enum';
 import { EchoDto } from './dto/echo.dto';
 
 @ApiTags('Echo')

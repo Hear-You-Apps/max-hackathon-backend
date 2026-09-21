@@ -5,7 +5,7 @@ import {
   HouseJoinRequestStatus,
   HouseMembershipStatus,
   HouseRole,
-} from '../../../generated/prisma/enums';
+} from '@generated/prisma/enums';
 import { HousePermission } from '../enums/house-permission.enum';
 
 export class HouseSummaryDto {

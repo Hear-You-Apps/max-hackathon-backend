@@ -5,15 +5,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ErrorCode } from '../../common/enums/error-code.enum';
-import { Prisma } from '../../generated/prisma/client';
-import type { HouseInvitation } from '../../generated/prisma/client';
+import { ErrorCode } from '@common/enums/error-code.enum';
+import { Prisma } from '@generated/prisma/client';
+import type { HouseInvitation } from '@generated/prisma/client';
 import {
   ApartmentVerificationStatus,
   HouseJoinRequestStatus,
   HouseMembershipStatus,
-} from '../../generated/prisma/enums';
-import { PrismaService } from '../../prisma/prisma.service';
+} from '@generated/prisma/enums';
+import { PrismaService } from '@prisma/prisma.service';
 import type {
   MyHouseJoinRequestDto,
   MyHousesResponseDto,

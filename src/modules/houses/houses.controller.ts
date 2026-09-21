@@ -20,10 +20,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ErrorResponseDto } from '../../common/dto/error-response.dto';
-import { ErrorCode } from '../../common/enums/error-code.enum';
-import { User } from '../users/decorators/user.decorator';
-import type { UserProfileDto } from '../users/dto/user-profile.dto';
+import { ErrorResponseDto } from '@common/dto/error-response.dto';
+import { ErrorCode } from '@common/enums/error-code.enum';
+import { User } from '@users/decorators/user.decorator';
+import type { UserProfileDto } from '@users/dto/user-profile.dto';
 import {
   MyHouseJoinRequestDto,
   MyHousesResponseDto,

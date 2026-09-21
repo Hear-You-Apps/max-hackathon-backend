@@ -13,6 +13,14 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@common/*": ["src/common/*"],
+      "@auth/*": ["src/auth/*"],
+      "@config/*": ["src/config/*"],
+      "@prisma/*": ["src/prisma/*"],
+      "@generated/*": ["src/generated/*"],
+      "@users/*": ["src/modules/users/*"]
+    },
     "incremental": true,
     "strict": true,
     "skipLibCheck": true,

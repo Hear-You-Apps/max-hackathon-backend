@@ -10,7 +10,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { ApartmentRelationship } from '../../../generated/prisma/enums';
+import { ApartmentRelationship } from '@generated/prisma/enums';
 import { SearchHouseQueryDto } from './search-house-query.dto';
 
 export class JoinHouseNotificationsDto {
