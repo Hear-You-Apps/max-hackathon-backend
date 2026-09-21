@@ -140,7 +140,13 @@ export class DebugService {
             userId: request.userId,
             houseId: request.houseId,
           },
-          update: membershipData,
+          update: {
+            ...membershipData,
+            ...(existing?.status === HouseMembershipStatus.approved && {
+              notifyMeetings: existing.notifyMeetings,
+              notifyRequests: existing.notifyRequests,
+            }),
+          },
         });
         await tx.houseMemberRole.upsert({
           where: {

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import {
@@ -25,6 +26,7 @@ import { ErrorCode } from '@common/enums/error-code.enum';
 import { User } from '@users/decorators/user.decorator';
 import type { UserProfileDto } from '@users/dto/user-profile.dto';
 import {
+  HouseNotificationsDto,
   MyHouseJoinRequestDto,
   MyHousesResponseDto,
 } from './dto/my-houses-response.dto';
@@ -33,6 +35,7 @@ import { LeaveHouseDto } from './dto/leave-house.dto';
 import { LeaveHouseMembershipDto } from './dto/leave-house-membership.dto';
 import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
+import { UpdateHouseNotificationsDto } from './dto/update-house-notifications.dto';
 import { HousesService } from './houses.service';
 
 @ApiTags('Houses')
@@ -157,5 +160,28 @@ export class HousesController {
     @Body() body: LeaveHouseMembershipDto,
   ): Promise<void> {
     return this.houses.leaveMembership(user.id, body.houseId);
+  }
+
+  @Put('notifications')
+  @ApiOperation({
+    operationId: 'updateHouseNotifications',
+    summary: 'Изменение уведомлений дома',
+    description:
+      'Настройки текущего пользователя в подтверждённом доме. Передайте оба переключателя.',
+  })
+  @ApiOkResponse({ type: HouseNotificationsDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID дома или настройки уведомлений',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Нет подтверждённого членства в доме (${ErrorCode.HOUSE_MEMBERSHIP_NOT_FOUND})`,
+  })
+  updateNotifications(
+    @User() user: UserProfileDto,
+    @Body() body: UpdateHouseNotificationsDto,
+  ): Promise<HouseNotificationsDto> {
+    return this.houses.updateNotifications(user.id, body);
   }
 }
