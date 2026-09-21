@@ -1,0 +1,1 @@
+export const MYSQL_UNSIGNED_INT_MAX = 4_294_967_295;

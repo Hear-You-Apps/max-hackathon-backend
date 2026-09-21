@@ -60,6 +60,34 @@ const readPermissions = [
 export class HousesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async leave(userId: number, requestId: number): Promise<void> {
+    const result = await this.prisma.houseJoinRequest.updateMany({
+      where: { id: requestId, userId, status: HouseJoinRequestStatus.pending },
+      data: { status: HouseJoinRequestStatus.cancelled },
+    });
+    if (result.count > 0) return;
+
+    const request = await this.prisma.houseJoinRequest.findFirst({
+      where: { id: requestId, userId },
+      select: { id: true },
+    });
+    if (!request) {
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: 'Not Found',
+        code: ErrorCode.JOIN_REQUEST_NOT_FOUND,
+        message: 'Заявка на присоединение к дому не найдена',
+      });
+    }
+
+    throw new ConflictException({
+      statusCode: HttpStatus.CONFLICT,
+      error: 'Conflict',
+      code: ErrorCode.JOIN_REQUEST_NOT_PENDING,
+      message: 'Отменить можно только заявку, ожидающую подтверждения',
+    });
+  }
+
   async join(
     userId: number,
     body: JoinHouseDto,

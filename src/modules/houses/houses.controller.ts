@@ -1,10 +1,20 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiGoneResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -19,6 +29,7 @@ import {
   MyHousesResponseDto,
 } from './dto/my-houses-response.dto';
 import { JoinHouseDto } from './dto/join-house.dto';
+import { LeaveHouseDto } from './dto/leave-house.dto';
 import { SearchHouseQueryDto } from './dto/search-house-query.dto';
 import { SearchHouseResponseDto } from './dto/search-house-response.dto';
 import { HousesService } from './houses.service';
@@ -95,5 +106,31 @@ export class HousesController {
     @Body() body: JoinHouseDto,
   ): Promise<MyHouseJoinRequestDto> {
     return this.houses.join(user.id, body);
+  }
+
+  @Delete('leave')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'leaveHouse',
+    summary: 'Отмена своей заявки на присоединение к дому',
+  })
+  @ApiNoContentResponse({ description: 'Заявка отменена' })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID заявки',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Заявка не найдена (${ErrorCode.JOIN_REQUEST_NOT_FOUND})`,
+  })
+  @ApiConflictResponse({
+    type: ErrorResponseDto,
+    description: `Пользователь не инициализирован (${ErrorCode.USER_NOT_INITIALIZED}) или заявка уже не ожидает подтверждения (${ErrorCode.JOIN_REQUEST_NOT_PENDING})`,
+  })
+  leave(
+    @User() user: UserProfileDto,
+    @Body() body: LeaveHouseDto,
+  ): Promise<void> {
+    return this.houses.leave(user.id, body.requestId);
   }
 }
