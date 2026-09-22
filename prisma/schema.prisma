@@ -71,6 +71,11 @@ enum HouseEventType {
   other
 }
 
+enum HouseChatType {
+  chat
+  channel
+}
+
 model House {
   id                    Int     @id @default(autoincrement()) @db.UnsignedInt
   address               String  @db.VarChar(500)
@@ -87,8 +92,24 @@ model House {
   invitations  HouseInvitation[]
   contacts     HouseContact[]
   events       HouseEvent[]
+  chats        HouseChat[]
 
   @@map("houses")
+}
+
+model HouseChat {
+  id          Int           @id @default(autoincrement()) @db.UnsignedInt
+  houseId     Int           @map("house_id") @db.UnsignedInt
+  type        HouseChatType
+  name        String        @db.VarChar(255)
+  description String?       @db.Text
+  url         String        @db.VarChar(2048)
+  sortOrder   Int           @default(0) @map("sort_order") @db.UnsignedInt
+
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([houseId, sortOrder, id])
+  @@map("house_chats")
 }
 
 model HouseContact {

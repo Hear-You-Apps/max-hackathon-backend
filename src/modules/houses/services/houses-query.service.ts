@@ -12,6 +12,7 @@ import {
 import { PrismaService } from '@prisma/prisma.service';
 import type { MyHousesResponseDto } from '../dto/my-houses-response.dto';
 import type { HouseDetailsResponseDto } from '../dto/house-details-response.dto';
+import type { HouseChatsResponseDto } from '../dto/house-chats-response.dto';
 import type { HouseEventDto } from '../dto/house-event.dto';
 import type { HouseEventsQueryDto } from '../dto/house-events-query.dto';
 import type { HouseEventsResponseDto } from '../dto/house-events-response.dto';
@@ -30,6 +31,31 @@ import { HouseEventsPeriod } from '../enums/house-events-period.enum';
 @Injectable()
 export class HousesQueryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findChats(
+    userId: number,
+    houseId: number,
+  ): Promise<HouseChatsResponseDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        await this.checkHouseAccess(tx, userId, houseId);
+
+        const items = await tx.houseChat.findMany({
+          where: { houseId },
+          orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+          select: {
+            id: true,
+            type: true,
+            name: true,
+            description: true,
+            url: true,
+          },
+        });
+        return { items };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
 
   async findEvents(
     userId: number,

@@ -42,6 +42,7 @@ import { HouseJoinRequestsService } from './services/house-join-requests.service
 import { HouseMembershipsService } from './services/house-memberships.service';
 import { HouseIdParamsDto } from './dto/house-id-params.dto';
 import { HouseDetailsResponseDto } from './dto/house-details-response.dto';
+import { HouseChatsResponseDto } from './dto/house-chats-response.dto';
 import { HouseEventsQueryDto } from './dto/house-events-query.dto';
 import { HouseEventsResponseDto } from './dto/house-events-response.dto';
 
@@ -194,6 +195,28 @@ export class HousesController {
     @Body() body: UpdateHouseNotificationsDto,
   ): Promise<HouseNotificationsDto> {
     return this.memberships.updateNotifications(user.id, body);
+  }
+
+  @Get(':houseId/chats')
+  @ApiOperation({
+    operationId: 'getHouseChats',
+    summary: 'Получение чатов и каналов дома',
+    description: 'Список чатов и каналов',
+  })
+  @ApiOkResponse({ type: HouseChatsResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID дома',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Дом не найден или недоступен (${ErrorCode.HOUSE_NOT_AVAILABLE})`,
+  })
+  findChats(
+    @User() user: UserProfileDto,
+    @Param() params: HouseIdParamsDto,
+  ): Promise<HouseChatsResponseDto> {
+    return this.houses.findChats(user.id, params.houseId);
   }
 
   @Get(':houseId/events')
