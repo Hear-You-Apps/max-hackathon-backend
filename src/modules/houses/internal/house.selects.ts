@@ -26,3 +26,18 @@ export const joinRequestSelect = {
 export type JoinRequestWithHouse = Prisma.HouseJoinRequestGetPayload<{
   select: typeof joinRequestSelect;
 }>;
+
+export const houseEventSelect = {
+  id: true,
+  type: true,
+  title: true,
+  description: true,
+  startsAt: true,
+  endsAt: true,
+  location: true,
+  isCancelled: true,
+} satisfies Prisma.HouseEventSelect;
+
+export type HouseEventData = Prisma.HouseEventGetPayload<{
+  select: typeof houseEventSelect;
+}>;

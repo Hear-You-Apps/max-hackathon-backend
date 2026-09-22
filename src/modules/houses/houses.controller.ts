@@ -42,6 +42,8 @@ import { HouseJoinRequestsService } from './services/house-join-requests.service
 import { HouseMembershipsService } from './services/house-memberships.service';
 import { HouseIdParamsDto } from './dto/house-id-params.dto';
 import { HouseDetailsResponseDto } from './dto/house-details-response.dto';
+import { HouseEventsQueryDto } from './dto/house-events-query.dto';
+import { HouseEventsResponseDto } from './dto/house-events-response.dto';
 
 @ApiTags('Houses')
 @ApiUnauthorizedResponse({ type: ErrorResponseDto })
@@ -192,6 +194,30 @@ export class HousesController {
     @Body() body: UpdateHouseNotificationsDto,
   ): Promise<HouseNotificationsDto> {
     return this.memberships.updateNotifications(user.id, body);
+  }
+
+  @Get(':houseId/events')
+  @ApiOperation({
+    operationId: 'getHouseEvents',
+    summary: 'Получение событий дома',
+    description:
+      'Список событий с пагинацией, включая отменённые. Для upcoming события идут по возрастанию даты начала, для all и past по убыванию. Доступ такой же, как к информации о доме.',
+  })
+  @ApiOkResponse({ type: HouseEventsResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID дома, период или параметры пагинации',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Дом не найден или недоступен (${ErrorCode.HOUSE_NOT_AVAILABLE})`,
+  })
+  findEvents(
+    @User() user: UserProfileDto,
+    @Param() params: HouseIdParamsDto,
+    @Query() query: HouseEventsQueryDto,
+  ): Promise<HouseEventsResponseDto> {
+    return this.houses.findEvents(user.id, params.houseId, query);
   }
 
   @Get(':houseId')

@@ -12,15 +12,59 @@ import {
 import { PrismaService } from '@prisma/prisma.service';
 import type { MyHousesResponseDto } from '../dto/my-houses-response.dto';
 import type { HouseDetailsResponseDto } from '../dto/house-details-response.dto';
+import type { HouseEventDto } from '../dto/house-event.dto';
+import type { HouseEventsQueryDto } from '../dto/house-events-query.dto';
+import type { HouseEventsResponseDto } from '../dto/house-events-response.dto';
 import type { SearchHouseResponseDto } from '../dto/search-house-response.dto';
-import { houseSelect, joinRequestSelect } from '../internal/house.selects';
+import {
+  houseSelect,
+  joinRequestSelect,
+  houseEventSelect,
+} from '../internal/house.selects';
+import type { HouseEventData } from '../internal/house.selects';
 import { readPermissions } from '../internal/house.permissions';
 import { checkInvitation } from '../internal/house-invitation.rules';
 import { toJoinRequestResponse } from '../internal/house-join-request.mapper';
+import { HouseEventsPeriod } from '../enums/house-events-period.enum';
 
 @Injectable()
 export class HousesQueryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findEvents(
+    userId: number,
+    houseId: number,
+    query: HouseEventsQueryDto,
+  ): Promise<HouseEventsResponseDto> {
+    const { page, limit, period } = query;
+    return this.prisma.$transaction(
+      async (tx) => {
+        await this.checkHouseAccess(tx, userId, houseId);
+
+        const where: Prisma.HouseEventWhereInput = {
+          houseId,
+          ...this.getEventPeriodFilter(period, new Date()),
+        };
+        const order = period === HouseEventsPeriod.UPCOMING ? 'asc' : 'desc';
+        const events = await tx.houseEvent.findMany({
+          where,
+          select: houseEventSelect,
+          orderBy: [{ startsAt: order }, { id: order }],
+          skip: (page - 1) * limit,
+          take: limit,
+        });
+        const total = await tx.houseEvent.count({ where });
+
+        return {
+          items: events.map((event) => this.toEventResponse(event)),
+          page,
+          limit,
+          total,
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
 
   async findOne(
     userId: number,
@@ -28,25 +72,7 @@ export class HousesQueryService {
   ): Promise<HouseDetailsResponseDto> {
     return this.prisma.$transaction(
       async (tx) => {
-        const membership = await tx.houseMembership.findUnique({
-          where: { userId_houseId: { userId, houseId } },
-          select: { status: true, lastLeftAt: true },
-        });
-        let canRead = membership?.status === HouseMembershipStatus.approved;
-
-        if (!canRead && membership?.status !== HouseMembershipStatus.revoked) {
-          const requests = await tx.houseJoinRequest.findMany({
-            where: { userId, houseId },
-            orderBy: { id: 'desc' },
-            distinct: ['apartmentNumber'],
-            select: { apartmentNumber: true, status: true, createdAt: true },
-          });
-          canRead = requests.some((request) =>
-            this.isCurrentJoinRequest(request, membership),
-          );
-        }
-
-        if (!canRead) this.throwHouseNotAvailable();
+        await this.checkHouseAccess(tx, userId, houseId);
 
         const now = new Date();
         const house = await tx.house.findUnique({
@@ -70,23 +96,11 @@ export class HousesQueryService {
             events: {
               where: {
                 isCancelled: false,
-                OR: [
-                  { endsAt: { gt: now } },
-                  { endsAt: null, startsAt: { gte: now } },
-                ],
+                ...this.getEventPeriodFilter(HouseEventsPeriod.UPCOMING, now),
               },
               orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
               take: 3,
-              select: {
-                id: true,
-                type: true,
-                title: true,
-                description: true,
-                startsAt: true,
-                endsAt: true,
-                location: true,
-                isCancelled: true,
-              },
+              select: houseEventSelect,
             },
           },
         });
@@ -97,11 +111,7 @@ export class HousesQueryService {
           house: info,
           contacts,
           utilities: { paymentUrl },
-          upcomingEvents: events.map((event) => ({
-            ...event,
-            startsAt: event.startsAt.toISOString(),
-            endsAt: event.endsAt?.toISOString() ?? null,
-          })),
+          upcomingEvents: events.map((event) => this.toEventResponse(event)),
         };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
@@ -234,6 +244,57 @@ export class HousesQueryService {
           ),
         ),
     };
+  }
+
+  private getEventPeriodFilter(
+    period: HouseEventsPeriod,
+    now: Date,
+  ): Prisma.HouseEventWhereInput {
+    if (period === HouseEventsPeriod.UPCOMING) {
+      return {
+        OR: [{ endsAt: { gt: now } }, { endsAt: null, startsAt: { gte: now } }],
+      };
+    }
+    if (period === HouseEventsPeriod.PAST) {
+      return {
+        OR: [{ endsAt: { lte: now } }, { endsAt: null, startsAt: { lt: now } }],
+      };
+    }
+    return {};
+  }
+
+  private toEventResponse(event: HouseEventData): HouseEventDto {
+    return {
+      ...event,
+      startsAt: event.startsAt.toISOString(),
+      endsAt: event.endsAt?.toISOString() ?? null,
+    };
+  }
+
+  private async checkHouseAccess(
+    tx: Prisma.TransactionClient,
+    userId: number,
+    houseId: number,
+  ): Promise<void> {
+    const membership = await tx.houseMembership.findUnique({
+      where: { userId_houseId: { userId, houseId } },
+      select: { status: true, lastLeftAt: true },
+    });
+    let canRead = membership?.status === HouseMembershipStatus.approved;
+
+    if (!canRead && membership?.status !== HouseMembershipStatus.revoked) {
+      const requests = await tx.houseJoinRequest.findMany({
+        where: { userId, houseId },
+        orderBy: { id: 'desc' },
+        distinct: ['apartmentNumber'],
+        select: { apartmentNumber: true, status: true, createdAt: true },
+      });
+      canRead = requests.some((request) =>
+        this.isCurrentJoinRequest(request, membership),
+      );
+    }
+
+    if (!canRead) this.throwHouseNotAvailable();
   }
 
   private isCurrentJoinRequest(
