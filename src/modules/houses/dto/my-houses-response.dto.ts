@@ -6,9 +6,8 @@ import {
   HouseMembershipStatus,
   HouseRole,
 } from '@generated/prisma/enums';
-import { HousePermission } from '../enums/house-permission.enum';
 
-export class HouseSummaryDto {
+export class HousePreviewDto {
   @ApiProperty({ example: 10 })
   id!: number;
 
@@ -18,18 +17,21 @@ export class HouseSummaryDto {
   @ApiProperty({ type: String, nullable: true, example: 'Жилсервис' })
   managementCompanyName!: string | null;
 
-  @ApiProperty({
-    type: String,
-    nullable: true,
-    description: 'Ссылка для связи с администратором дома',
-  })
-  adminContactUrl!: string | null;
-
   @ApiProperty({ type: Number, nullable: true, example: 412 })
   apartmentsCount!: number | null;
 
   @ApiProperty({ type: Number, nullable: true, example: 6 })
   entrancesCount!: number | null;
+}
+
+export class HouseSummaryDto extends HousePreviewDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Ссылка для связи с администратором дома. Доступна при подтверждённом членстве.',
+  })
+  adminContactUrl!: string | null;
 }
 
 export class HouseNotificationsDto {
@@ -93,22 +95,14 @@ export class MyHouseMembershipDto {
 export class MyHouseDto extends HouseSummaryDto {
   @ApiProperty({ type: MyHouseMembershipDto })
   membership!: MyHouseMembershipDto;
-
-  @ApiProperty({
-    enum: HousePermission,
-    enumName: 'HousePermission',
-    isArray: true,
-    description: 'Права просмотра. При отозванном доступе список пуст.',
-  })
-  permissions!: HousePermission[];
 }
 
 export class MyHouseJoinRequestDto {
   @ApiProperty({ example: 25 })
   id!: number;
 
-  @ApiProperty({ type: HouseSummaryDto })
-  house!: HouseSummaryDto;
+  @ApiProperty({ type: HousePreviewDto })
+  house!: HousePreviewDto;
 
   @ApiProperty({ example: '112' })
   apartmentNumber!: string;
@@ -133,13 +127,6 @@ export class MyHouseJoinRequestDto {
 
   @ApiProperty({ type: HouseNotificationsDto })
   notifications!: HouseNotificationsDto;
-
-  @ApiProperty({
-    enum: HousePermission,
-    enumName: 'HousePermission',
-    isArray: true,
-  })
-  permissions!: HousePermission[];
 }
 
 export class MyHousesResponseDto {

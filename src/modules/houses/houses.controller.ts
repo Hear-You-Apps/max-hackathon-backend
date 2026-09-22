@@ -201,7 +201,7 @@ export class HousesController {
   @ApiOperation({
     operationId: 'getHouseChats',
     summary: 'Получение чатов и каналов дома',
-    description: 'Список чатов и каналов',
+    description: 'Доступны только при подтверждённом членстве в доме',
   })
   @ApiOkResponse({ type: HouseChatsResponseDto })
   @ApiBadRequestResponse({
@@ -224,7 +224,7 @@ export class HousesController {
     operationId: 'getHouseEvents',
     summary: 'Получение событий дома',
     description:
-      'Список событий с пагинацией, включая отменённые. Для upcoming события идут по возрастанию даты начала, для all и past по убыванию. Доступ такой же, как к информации о доме.',
+      'Список событий с пагинацией, включая отменённые. Для upcoming события идут по возрастанию даты начала, для all и past по убыванию. Требуется подтверждённое членство в доме.',
   })
   @ApiOkResponse({ type: HouseEventsResponseDto })
   @ApiBadRequestResponse({
@@ -248,7 +248,7 @@ export class HousesController {
     operationId: 'getHouse',
     summary: 'Получение информации о доме',
     description:
-      'Информация о доме, контакты, ссылка на оплату и ближайшие события. Требуется членство или актуальная заявка на присоединение. При отозванном доступе дом недоступен.',
+      'Информация о доме, контакты, ссылка на оплату и ближайшие события. Требуется подтверждённое членство в доме',
   })
   @ApiOkResponse({ type: HouseDetailsResponseDto })
   @ApiBadRequestResponse({

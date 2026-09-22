@@ -19,11 +19,11 @@ import type { HouseEventsResponseDto } from '../dto/house-events-response.dto';
 import type { SearchHouseResponseDto } from '../dto/search-house-response.dto';
 import {
   houseSelect,
+  housePreviewSelect,
   joinRequestSelect,
   houseEventSelect,
 } from '../internal/house.selects';
 import type { HouseEventData } from '../internal/house.selects';
-import { readPermissions } from '../internal/house.permissions';
 import { checkInvitation } from '../internal/house-invitation.rules';
 import { toJoinRequestResponse } from '../internal/house-join-request.mapper';
 import { HouseEventsPeriod } from '../enums/house-events-period.enum';
@@ -153,7 +153,7 @@ export class HousesQueryService {
         revokedAt: true,
         house: {
           select: {
-            ...houseSelect,
+            ...housePreviewSelect,
             _count: {
               select: {
                 memberships: {
@@ -230,6 +230,10 @@ export class HousesQueryService {
         )
         .map((membership) => ({
           ...membership.house,
+          adminContactUrl:
+            membership.status === HouseMembershipStatus.approved
+              ? membership.house.adminContactUrl
+              : null,
           membership: {
             id: membership.id,
             status: membership.status,
@@ -251,10 +255,6 @@ export class HousesQueryService {
               requests: membership.notifyRequests,
             },
           },
-          permissions:
-            membership.status === HouseMembershipStatus.approved
-              ? [...readPermissions]
-              : [],
         })),
       joinRequests: joinRequests
         .filter((request) =>
@@ -263,12 +263,7 @@ export class HousesQueryService {
             membershipsByHouseId.get(request.houseId),
           ),
         )
-        .map((request) =>
-          toJoinRequestResponse(
-            request,
-            membershipsByHouseId.get(request.houseId)?.status,
-          ),
-        ),
+        .map(toJoinRequestResponse),
     };
   }
 
@@ -304,23 +299,11 @@ export class HousesQueryService {
   ): Promise<void> {
     const membership = await tx.houseMembership.findUnique({
       where: { userId_houseId: { userId, houseId } },
-      select: { status: true, lastLeftAt: true },
+      select: { status: true },
     });
-    let canRead = membership?.status === HouseMembershipStatus.approved;
-
-    if (!canRead && membership?.status !== HouseMembershipStatus.revoked) {
-      const requests = await tx.houseJoinRequest.findMany({
-        where: { userId, houseId },
-        orderBy: { id: 'desc' },
-        distinct: ['apartmentNumber'],
-        select: { apartmentNumber: true, status: true, createdAt: true },
-      });
-      canRead = requests.some((request) =>
-        this.isCurrentJoinRequest(request, membership),
-      );
+    if (membership?.status !== HouseMembershipStatus.approved) {
+      this.throwHouseNotAvailable();
     }
-
-    if (!canRead) this.throwHouseNotAvailable();
   }
 
   private isCurrentJoinRequest(

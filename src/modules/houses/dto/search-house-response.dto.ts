@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  HouseSummaryDto,
+  HousePreviewDto,
   MyHouseJoinRequestDto,
   MyHouseMembershipDto,
 } from './my-houses-response.dto';
 
-export class FoundHouseDto extends HouseSummaryDto {
+export class FoundHouseDto extends HousePreviewDto {
   @ApiProperty({
     example: 286,
     description: 'Количество пользователей с подтверждённым доступом к дому',

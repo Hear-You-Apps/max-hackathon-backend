@@ -1,12 +1,16 @@
 import type { Prisma } from '@generated/prisma/client';
 
-export const houseSelect = {
+export const housePreviewSelect = {
   id: true,
   address: true,
   managementCompanyName: true,
-  adminContactUrl: true,
   apartmentsCount: true,
   entrancesCount: true,
+} satisfies Prisma.HouseSelect;
+
+export const houseSelect = {
+  ...housePreviewSelect,
+  adminContactUrl: true,
 } satisfies Prisma.HouseSelect;
 
 export const joinRequestSelect = {
@@ -20,7 +24,7 @@ export const joinRequestSelect = {
   rejectionReason: true,
   notifyMeetings: true,
   notifyRequests: true,
-  house: { select: houseSelect },
+  house: { select: housePreviewSelect },
 } satisfies Prisma.HouseJoinRequestSelect;
 
 export type JoinRequestWithHouse = Prisma.HouseJoinRequestGetPayload<{

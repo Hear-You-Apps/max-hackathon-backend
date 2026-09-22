@@ -136,7 +136,7 @@ export class HouseJoinRequestsService {
           select: joinRequestSelect,
         });
 
-        return toJoinRequestResponse(request, membership?.status);
+        return toJoinRequestResponse(request);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
     );
