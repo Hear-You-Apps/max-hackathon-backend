@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -16,6 +18,9 @@ import { HouseIdParamsDto } from '../houses/dto/house-id-params.dto';
 import { MeetingsQueryDto } from './dto/meetings-query.dto';
 import { MeetingsResponseDto } from './dto/meetings-response.dto';
 import { MeetingsService } from './meetings.service';
+import { MeetingCreationService } from './meeting-creation.service';
+import { CreateMeetingDto } from './dto/create-meeting.dto';
+import { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
 
 @ApiTags('Meetings')
 @ApiUnauthorizedResponse({ type: ErrorResponseDto })
@@ -25,7 +30,38 @@ import { MeetingsService } from './meetings.service';
 })
 @Controller('houses/:houseId/meetings')
 export class HouseMeetingsController {
-  constructor(private readonly meetings: MeetingsService) {}
+  constructor(
+    private readonly meetings: MeetingsService,
+    private readonly creation: MeetingCreationService,
+  ) {}
+
+  @Post()
+  @ApiOperation({
+    operationId: 'createMeeting',
+    summary: 'Создание собрания',
+    description:
+      'Доступно подтверждённым собственникам, организаторам, совету дома и админам. Собрание сразу появится в списке, без модерации',
+  })
+  @ApiCreatedResponse({ type: MeetingDetailsResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: `Неверные поля, даты (${ErrorCode.INVALID_MEETING_DATES}) или не указано место (${ErrorCode.MEETING_LOCATION_REQUIRED})`,
+  })
+  @ApiForbiddenResponse({
+    type: ErrorResponseDto,
+    description: `Нет права создавать собрания (${ErrorCode.MEETING_CREATE_FORBIDDEN})`,
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Дом не найден или недоступен (${ErrorCode.HOUSE_NOT_AVAILABLE})`,
+  })
+  create(
+    @User() user: UserProfileDto,
+    @Param() params: HouseIdParamsDto,
+    @Body() body: CreateMeetingDto,
+  ): Promise<MeetingDetailsResponseDto> {
+    return this.creation.create(user.id, params.houseId, body);
+  }
 
   @Get()
   @ApiOperation({

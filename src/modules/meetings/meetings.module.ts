@@ -4,10 +4,11 @@ import { HousesModule } from '../houses/houses.module';
 import { HouseMeetingsController } from './house-meetings.controller';
 import { MeetingsController } from './meetings.controller';
 import { MeetingsService } from './meetings.service';
+import { MeetingCreationService } from './meeting-creation.service';
 
 @Module({
   imports: [PrismaModule, HousesModule],
   controllers: [HouseMeetingsController, MeetingsController],
-  providers: [MeetingsService],
+  providers: [MeetingsService, MeetingCreationService],
 })
 export class MeetingsModule {}

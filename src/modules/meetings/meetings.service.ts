@@ -4,11 +4,11 @@ import { Prisma } from '@generated/prisma/client';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
 import type { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
-import type { MeetingDto, MeetingQuestionDto } from './dto/meeting.dto';
+import type { MeetingQuestionDto } from './dto/meeting.dto';
 import type { MeetingsQueryDto } from './dto/meetings-query.dto';
 import type { MeetingsResponseDto } from './dto/meetings-response.dto';
-import { MeetingStatus } from './enums/meeting-status.enum';
 import { MeetingsPeriod } from './enums/meetings-period.enum';
+import { toMeetingResponse } from './internal/meeting.mapper';
 
 const meetingSelect = {
   id: true,
@@ -26,7 +26,6 @@ const questionSelect = {
   title: true,
 } satisfies Prisma.MeetingQuestionSelect;
 
-type MeetingData = Prisma.MeetingGetPayload<{ select: typeof meetingSelect }>;
 type QuestionData = Prisma.MeetingQuestionGetPayload<{
   select: typeof questionSelect;
 }>;
@@ -87,11 +86,7 @@ export class MeetingsService {
           meetings.map((meeting) => meeting.id),
         );
         const items = meetings.map((meeting) => ({
-          ...this.toMeetingResponse(
-            meeting,
-            now,
-            participants.get(meeting.id) ?? 0,
-          ),
+          ...toMeetingResponse(meeting, now, participants.get(meeting.id) ?? 0),
           questionsCount: meeting._count.questions,
           firstQuestion: questionsById.get(meeting.questions[0]?.id) ?? null,
         }));
@@ -140,11 +135,7 @@ export class MeetingsService {
         );
         const participants = await this.countParticipants(tx, [meeting.id]);
         return {
-          ...this.toMeetingResponse(
-            meeting,
-            now,
-            participants.get(meeting.id) ?? 0,
-          ),
+          ...toMeetingResponse(meeting, now, participants.get(meeting.id) ?? 0),
           description: meeting.description,
           author: meeting.author
             ? {
@@ -219,29 +210,5 @@ export class MeetingsService {
     return new Map(
       counts.map((count) => [count.meetingId, Number(count.participantsCount)]),
     );
-  }
-
-  private toMeetingResponse(
-    meeting: MeetingData,
-    now: Date,
-    participantsCount: number,
-  ): MeetingDto {
-    let status: MeetingStatus;
-    if (meeting.isCancelled) status = MeetingStatus.CANCELLED;
-    else if (meeting.endsAt <= now) status = MeetingStatus.CLOSED;
-    else if (meeting.startsAt > now) status = MeetingStatus.SCHEDULED;
-    else status = MeetingStatus.ACTIVE;
-
-    return {
-      id: meeting.id,
-      houseId: meeting.houseId,
-      title: meeting.title,
-      format: meeting.format,
-      location: meeting.location,
-      status,
-      startsAt: meeting.startsAt.toISOString(),
-      endsAt: meeting.endsAt.toISOString(),
-      participantsCount,
-    };
   }
 }
