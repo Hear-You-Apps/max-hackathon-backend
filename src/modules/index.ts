@@ -4,3 +4,4 @@ export { InitModule } from './init/init.module';
 export { UsersModule } from './users/users.module';
 export { HousesModule } from './houses/houses.module';
 export { DebugModule } from './debug/debug.module';
+export { MeetingsModule } from './meetings/meetings.module';

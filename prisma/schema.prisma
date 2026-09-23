@@ -18,6 +18,8 @@ model User {
 
   houseMemberships  HouseMembership[]
   houseJoinRequests HouseJoinRequest[]
+  meetings          Meeting[]
+  meetingVotes      MeetingVote[]
 
   @@map("users")
 }
@@ -76,6 +78,18 @@ enum HouseChatType {
   channel
 }
 
+enum MeetingFormat {
+  in_person
+  absentee
+  mixed
+}
+
+enum MeetingVoteChoice {
+  for
+  against
+  abstain
+}
+
 model House {
   id                    Int     @id @default(autoincrement()) @db.UnsignedInt
   address               String  @db.VarChar(500)
@@ -93,6 +107,7 @@ model House {
   contacts     HouseContact[]
   events       HouseEvent[]
   chats        HouseChat[]
+  meetings     Meeting[]
 
   @@map("houses")
 }
@@ -236,4 +251,49 @@ model HouseJoinRequest {
   @@index([userId, status])
   @@index([houseId, status])
   @@map("house_join_requests")
+}
+
+model Meeting {
+  id          Int           @id @default(autoincrement()) @db.UnsignedInt
+  houseId     Int           @map("house_id") @db.UnsignedInt
+  authorId    Int?          @map("author_id") @db.UnsignedInt
+  title       String        @db.VarChar(255)
+  description String?       @db.Text
+  format      MeetingFormat @default(absentee)
+  location    String?       @db.VarChar(500)
+  startsAt    DateTime      @map("starts_at") @db.DateTime(3)
+  endsAt      DateTime      @map("ends_at") @db.DateTime(3)
+  isCancelled Boolean       @default(false) @map("is_cancelled")
+
+  house     House             @relation(fields: [houseId], references: [id])
+  author    User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  questions MeetingQuestion[]
+
+  @@index([houseId, isCancelled, endsAt, id])
+  @@map("meetings")
+}
+
+model MeetingQuestion {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  meetingId Int    @map("meeting_id") @db.UnsignedInt
+  title     String @db.Text
+  sortOrder Int    @default(0) @map("sort_order") @db.UnsignedInt
+
+  meeting Meeting       @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  votes   MeetingVote[]
+
+  @@index([meetingId, sortOrder, id])
+  @@map("meeting_questions")
+}
+
+model MeetingVote {
+  questionId Int               @map("question_id") @db.UnsignedInt
+  userId     Int               @map("user_id") @db.UnsignedInt
+  choice     MeetingVoteChoice
+
+  question MeetingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, userId])
+  @@map("meeting_votes")
 }

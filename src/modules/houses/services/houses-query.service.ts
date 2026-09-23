@@ -27,10 +27,14 @@ import type { HouseEventData } from '../internal/house.selects';
 import { checkInvitation } from '../internal/house-invitation.rules';
 import { toJoinRequestResponse } from '../internal/house-join-request.mapper';
 import { HouseEventsPeriod } from '../enums/house-events-period.enum';
+import { HouseAccessService } from './house-access.service';
 
 @Injectable()
 export class HousesQueryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly houseAccess: HouseAccessService,
+  ) {}
 
   async findChats(
     userId: number,
@@ -38,7 +42,7 @@ export class HousesQueryService {
   ): Promise<HouseChatsResponseDto> {
     return this.prisma.$transaction(
       async (tx) => {
-        await this.checkHouseAccess(tx, userId, houseId);
+        await this.houseAccess.checkAccess(tx, userId, houseId);
 
         const items = await tx.houseChat.findMany({
           where: { houseId },
@@ -65,7 +69,7 @@ export class HousesQueryService {
     const { page, limit, period } = query;
     return this.prisma.$transaction(
       async (tx) => {
-        await this.checkHouseAccess(tx, userId, houseId);
+        await this.houseAccess.checkAccess(tx, userId, houseId);
 
         const where: Prisma.HouseEventWhereInput = {
           houseId,
@@ -98,7 +102,7 @@ export class HousesQueryService {
   ): Promise<HouseDetailsResponseDto> {
     return this.prisma.$transaction(
       async (tx) => {
-        await this.checkHouseAccess(tx, userId, houseId);
+        await this.houseAccess.checkAccess(tx, userId, houseId);
 
         const now = new Date();
         const house = await tx.house.findUnique({
@@ -290,20 +294,6 @@ export class HousesQueryService {
       startsAt: event.startsAt.toISOString(),
       endsAt: event.endsAt?.toISOString() ?? null,
     };
-  }
-
-  private async checkHouseAccess(
-    tx: Prisma.TransactionClient,
-    userId: number,
-    houseId: number,
-  ): Promise<void> {
-    const membership = await tx.houseMembership.findUnique({
-      where: { userId_houseId: { userId, houseId } },
-      select: { status: true },
-    });
-    if (membership?.status !== HouseMembershipStatus.approved) {
-      this.throwHouseNotAvailable();
-    }
   }
 
   private isCurrentJoinRequest(
