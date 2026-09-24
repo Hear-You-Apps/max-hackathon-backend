@@ -5,3 +5,5 @@ export { UsersModule } from './users/users.module';
 export { HousesModule } from './houses/houses.module';
 export { DebugModule } from './debug/debug.module';
 export { MeetingsModule } from './meetings/meetings.module';
+export { RequestsModule } from './requests/requests.module';
+export { FilesModule } from './files/files.module';

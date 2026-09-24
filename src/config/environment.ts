@@ -24,6 +24,10 @@ export class Environment {
 
   @IsString()
   @IsNotEmpty()
+  UPLOADS_DIR = './uploads';
+
+  @IsString()
+  @IsNotEmpty()
   MAX_BOT_TOKEN!: string;
 
   @Type(() => Number)

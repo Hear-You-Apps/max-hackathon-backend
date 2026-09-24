@@ -21,6 +21,8 @@ model User {
   meetings              Meeting[]
   meetingVotes          MeetingVote[]
   meetingParticipations MeetingParticipation[]
+  serviceRequests       ServiceRequest[]
+  files                 StoredFile[]
 
   @@map("users")
 }
@@ -91,6 +93,33 @@ enum MeetingVoteChoice {
   abstain
 }
 
+enum RequestCategory {
+  management
+  electrician
+  plumber
+  duty
+}
+
+enum RequestLocationType {
+  apartment
+  entrance
+  yard
+}
+
+enum RequestVisibility {
+  private
+  house
+}
+
+enum RequestStatus {
+  submitted
+  in_review
+  in_progress
+  resolved
+  closed
+  cancelled
+}
+
 model House {
   id                    Int     @id @default(autoincrement()) @db.UnsignedInt
   address               String  @db.VarChar(500)
@@ -101,14 +130,16 @@ model House {
   yearBuilt             Int?    @map("year_built") @db.UnsignedSmallInt
   paymentUrl            String? @map("payment_url") @db.VarChar(2048)
 
-  memberships  HouseMembership[]
-  apartments   Apartment[]
-  joinRequests HouseJoinRequest[]
-  invitations  HouseInvitation[]
-  contacts     HouseContact[]
-  events       HouseEvent[]
-  chats        HouseChat[]
-  meetings     Meeting[]
+  memberships     HouseMembership[]
+  apartments      Apartment[]
+  joinRequests    HouseJoinRequest[]
+  invitations     HouseInvitation[]
+  contacts        HouseContact[]
+  events          HouseEvent[]
+  chats           HouseChat[]
+  meetings        Meeting[]
+  serviceRequests ServiceRequest[]
+  files           StoredFile[]
 
   @@map("houses")
 }
@@ -211,8 +242,9 @@ model Apartment {
   houseId Int    @map("house_id") @db.UnsignedInt
   number  String @db.VarChar(32)
 
-  house       House                 @relation(fields: [houseId], references: [id])
-  memberships ApartmentMembership[]
+  house           House                 @relation(fields: [houseId], references: [id])
+  memberships     ApartmentMembership[]
+  serviceRequests ServiceRequest[]
 
   @@unique([houseId, number])
   @@unique([id, houseId])
@@ -311,4 +343,62 @@ model MeetingParticipation {
   @@id([meetingId, userId])
   @@index([meetingId, willAttend])
   @@map("meeting_participations")
+}
+
+model ServiceRequest {
+  id           Int                 @id @default(autoincrement()) @db.UnsignedInt
+  houseId      Int                 @map("house_id") @db.UnsignedInt
+  authorId     Int?                @map("author_id") @db.UnsignedInt
+  title        String              @db.VarChar(255)
+  description  String              @db.Text
+  category     RequestCategory
+  locationType RequestLocationType @map("location_type")
+  apartmentId  Int?                @map("apartment_id") @db.UnsignedInt
+  locationText String?             @map("location_text") @db.VarChar(500)
+  visibility   RequestVisibility   @default(private)
+  status       RequestStatus       @default(submitted)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+
+  house       House          @relation(fields: [houseId], references: [id])
+  author      User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  apartment   Apartment?     @relation(fields: [apartmentId, houseId], references: [id, houseId], onDelete: Restrict)
+  attachments StoredFile[]
+  events      RequestEvent[]
+
+  @@unique([id, houseId])
+  @@index([houseId, authorId, createdAt, id])
+  @@index([houseId, visibility, createdAt, id])
+  @@map("service_requests")
+}
+
+model RequestEvent {
+  id        Int           @id @default(autoincrement()) @db.UnsignedInt
+  requestId Int           @map("request_id") @db.UnsignedInt
+  status    RequestStatus
+  comment   String?       @db.Text
+  createdAt DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt, id])
+  @@map("request_events")
+}
+
+model StoredFile {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  houseId      Int      @map("house_id") @db.UnsignedInt
+  ownerId      Int?     @map("owner_id") @db.UnsignedInt
+  requestId    Int?     @map("request_id") @db.UnsignedInt
+  storageKey   String   @unique @map("storage_key") @db.VarChar(36)
+  originalName String   @map("original_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  size         Int      @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  house   House           @relation(fields: [houseId], references: [id])
+  owner   User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  request ServiceRequest? @relation(fields: [requestId, houseId], references: [id, houseId], onDelete: Restrict)
+
+  @@index([houseId, ownerId, requestId])
+  @@map("stored_files")
 }
