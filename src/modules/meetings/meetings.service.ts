@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
+import { MeetingFormat } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
 import type { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
@@ -9,6 +10,7 @@ import type { MeetingsQueryDto } from './dto/meetings-query.dto';
 import type { MeetingsResponseDto } from './dto/meetings-response.dto';
 import { MeetingsPeriod } from './enums/meetings-period.enum';
 import { toMeetingResponse } from './internal/meeting.mapper';
+import { MeetingParticipationService } from './meeting-participation.service';
 
 const meetingSelect = {
   id: true,
@@ -35,6 +37,7 @@ export class MeetingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly houseAccess: HouseAccessService,
+    private readonly participation: MeetingParticipationService,
   ) {}
 
   async findAll(
@@ -134,9 +137,19 @@ export class MeetingsService {
           meeting.questions,
         );
         const participants = await this.countParticipants(tx, [meeting.id]);
+        const participation =
+          meeting.format === MeetingFormat.absentee
+            ? null
+            : await this.participation.findOne(
+                tx,
+                userId,
+                meeting.id,
+                meeting.houseId,
+              );
         return {
           ...toMeetingResponse(meeting, now, participants.get(meeting.id) ?? 0),
           description: meeting.description,
+          participation,
           author: meeting.author
             ? {
                 id: meeting.author.id,

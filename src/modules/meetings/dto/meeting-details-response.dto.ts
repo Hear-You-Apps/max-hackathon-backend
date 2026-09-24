@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MeetingDto, MeetingQuestionDto } from './meeting.dto';
+import { MeetingParticipationResponseDto } from './meeting-participation.dto';
 
 export class MeetingAuthorDto {
   @ApiProperty({ type: 'integer', example: 1 })
@@ -10,6 +11,14 @@ export class MeetingAuthorDto {
 }
 
 export class MeetingDetailsResponseDto extends MeetingDto {
+  @ApiProperty({
+    type: MeetingParticipationResponseDto,
+    nullable: true,
+    description:
+      'Свой ответ и число планирующих прийти, null для заочного собрания',
+  })
+  participation!: MeetingParticipationResponseDto | null;
+
   @ApiProperty({
     type: String,
     nullable: true,

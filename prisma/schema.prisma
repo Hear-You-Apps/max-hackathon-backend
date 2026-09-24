@@ -16,10 +16,11 @@ model User {
   username  String? @db.VarChar(255)
   photoUrl  String? @map("photo_url") @db.Text
 
-  houseMemberships  HouseMembership[]
-  houseJoinRequests HouseJoinRequest[]
-  meetings          Meeting[]
-  meetingVotes      MeetingVote[]
+  houseMemberships      HouseMembership[]
+  houseJoinRequests     HouseJoinRequest[]
+  meetings              Meeting[]
+  meetingVotes          MeetingVote[]
+  meetingParticipations MeetingParticipation[]
 
   @@map("users")
 }
@@ -265,9 +266,10 @@ model Meeting {
   endsAt      DateTime      @map("ends_at") @db.DateTime(3)
   isCancelled Boolean       @default(false) @map("is_cancelled")
 
-  house     House             @relation(fields: [houseId], references: [id])
-  author    User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  questions MeetingQuestion[]
+  house          House                  @relation(fields: [houseId], references: [id])
+  author         User?                  @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  questions      MeetingQuestion[]
+  participations MeetingParticipation[]
 
   @@index([houseId, isCancelled, endsAt, id])
   @@map("meetings")
@@ -296,4 +298,17 @@ model MeetingVote {
 
   @@id([questionId, userId])
   @@map("meeting_votes")
+}
+
+model MeetingParticipation {
+  meetingId  Int     @map("meeting_id") @db.UnsignedInt
+  userId     Int     @map("user_id") @db.UnsignedInt
+  willAttend Boolean @map("will_attend")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([meetingId, userId])
+  @@index([meetingId, willAttend])
+  @@map("meeting_participations")
 }

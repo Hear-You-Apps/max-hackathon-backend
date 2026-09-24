@@ -128,6 +128,10 @@ export class MeetingCreationService {
         return {
           ...toMeetingResponse(meeting, new Date(), 0),
           description: meeting.description,
+          participation:
+            meeting.format === MeetingFormat.absentee
+              ? null
+              : { willAttend: null, goingCount: 0 },
           author: meeting.author
             ? {
                 id: meeting.author.id,

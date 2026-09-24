@@ -17,6 +17,11 @@ import { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
 import { MeetingIdParamsDto } from './dto/meeting-id-params.dto';
 import { MeetingsService } from './meetings.service';
 import { MeetingVotesService } from './meeting-votes.service';
+import { MeetingParticipationService } from './meeting-participation.service';
+import {
+  MeetingParticipationResponseDto,
+  UpdateMeetingParticipationDto,
+} from './dto/meeting-participation.dto';
 import {
   MeetingVotesResponseDto,
   UpdateMeetingVotesDto,
@@ -33,7 +38,36 @@ export class MeetingsController {
   constructor(
     private readonly meetings: MeetingsService,
     private readonly votes: MeetingVotesService,
+    private readonly participation: MeetingParticipationService,
   ) {}
+
+  @Put(':meetingId/participation')
+  @ApiOperation({
+    operationId: 'updateMeetingParticipation',
+    summary: 'Приду или не приду на собрание',
+    description:
+      'Для подтверждённых жителей дома, включая нанимателей. Ответ можно менять до начала очного или очно-заочного собрания',
+  })
+  @ApiOkResponse({ type: MeetingParticipationResponseDto })
+  @ApiBadRequestResponse({
+    type: ErrorResponseDto,
+    description: 'Неверный ID собрания или willAttend',
+  })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: `Собрание не найдено или недоступно (${ErrorCode.MEETING_NOT_AVAILABLE})`,
+  })
+  @ApiConflictResponse({
+    type: ErrorResponseDto,
+    description: `Запись закрыта по сроку, формату или отмене (${ErrorCode.MEETING_PARTICIPATION_UNAVAILABLE}), либо пользователь ещё не инициализирован (${ErrorCode.USER_NOT_INITIALIZED})`,
+  })
+  updateParticipation(
+    @User() user: UserProfileDto,
+    @Param() params: MeetingIdParamsDto,
+    @Body() body: UpdateMeetingParticipationDto,
+  ): Promise<MeetingParticipationResponseDto> {
+    return this.participation.update(user.id, params.meetingId, body);
+  }
 
   @Put(':meetingId/votes')
   @ApiOperation({

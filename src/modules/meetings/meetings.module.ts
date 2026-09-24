@@ -6,10 +6,16 @@ import { MeetingsController } from './meetings.controller';
 import { MeetingsService } from './meetings.service';
 import { MeetingCreationService } from './meeting-creation.service';
 import { MeetingVotesService } from './meeting-votes.service';
+import { MeetingParticipationService } from './meeting-participation.service';
 
 @Module({
   imports: [PrismaModule, HousesModule],
   controllers: [HouseMeetingsController, MeetingsController],
-  providers: [MeetingsService, MeetingCreationService, MeetingVotesService],
+  providers: [
+    MeetingsService,
+    MeetingCreationService,
+    MeetingVotesService,
+    MeetingParticipationService,
+  ],
 })
 export class MeetingsModule {}
