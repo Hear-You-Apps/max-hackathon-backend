@@ -139,7 +139,7 @@ export class MeetingCreationService {
           questions: meeting.questions.map((question) => ({
             ...question,
             myVote: null,
-            results: { for: 0, against: 0, abstain: 0 },
+            results: { yes: 0, no: 0, abstain: 0 },
           })),
         };
       },

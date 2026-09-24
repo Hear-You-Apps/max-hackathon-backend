@@ -4,10 +4,10 @@ import { MeetingStatus } from '../enums/meeting-status.enum';
 
 export class MeetingVoteResultsDto {
   @ApiProperty({ type: 'integer', example: 42, description: 'Голоса за' })
-  for!: number;
+  yes!: number;
 
   @ApiProperty({ type: 'integer', example: 8, description: 'Голоса против' })
-  against!: number;
+  no!: number;
 
   @ApiProperty({ type: 'integer', example: 3, description: 'Воздержались' })
   abstain!: number;

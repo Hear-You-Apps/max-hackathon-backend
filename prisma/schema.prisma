@@ -85,8 +85,8 @@ enum MeetingFormat {
 }
 
 enum MeetingVoteChoice {
-  for
-  against
+  yes
+  no
   abstain
 }
 

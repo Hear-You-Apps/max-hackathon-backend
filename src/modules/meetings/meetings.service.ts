@@ -173,10 +173,7 @@ export class MeetingsService {
       votes.map((vote) => [vote.questionId, vote.choice]),
     );
     const results = new Map(
-      questions.map((question) => [
-        question.id,
-        { for: 0, against: 0, abstain: 0 },
-      ]),
+      questions.map((question) => [question.id, { yes: 0, no: 0, abstain: 0 }]),
     );
     for (const count of counts) {
       results.get(count.questionId)![count.choice] = count._count._all;
