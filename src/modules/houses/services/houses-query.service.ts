@@ -1,14 +1,7 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
-import type {
-  HouseJoinRequest,
-  HouseMembership,
-} from '@generated/prisma/client';
-import {
-  HouseJoinRequestStatus,
-  HouseMembershipStatus,
-} from '@generated/prisma/enums';
+import { HouseMembershipStatus } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import type { MyHousesResponseDto } from '../dto/my-houses-response.dto';
 import type { HouseDetailsResponseDto } from '../dto/house-details-response.dto';
@@ -26,6 +19,7 @@ import {
 import type { HouseEventData } from '../internal/house.selects';
 import { checkInvitation } from '../internal/house-invitation.rules';
 import { toJoinRequestResponse } from '../internal/house-join-request.mapper';
+import { isCurrentJoinRequest } from '../internal/house-join-request.rules';
 import { HouseEventsPeriod } from '../enums/house-events-period.enum';
 import { HouseAccessService } from './house-access.service';
 
@@ -262,7 +256,7 @@ export class HousesQueryService {
         })),
       joinRequests: joinRequests
         .filter((request) =>
-          this.isCurrentJoinRequest(
+          isCurrentJoinRequest(
             request,
             membershipsByHouseId.get(request.houseId),
           ),
@@ -294,24 +288,6 @@ export class HousesQueryService {
       startsAt: event.startsAt.toISOString(),
       endsAt: event.endsAt?.toISOString() ?? null,
     };
-  }
-
-  private isCurrentJoinRequest(
-    request: Pick<HouseJoinRequest, 'status' | 'createdAt'>,
-    membership:
-      Pick<HouseMembership, 'status' | 'lastLeftAt'> | null | undefined,
-  ): boolean {
-    if (
-      request.status !== HouseJoinRequestStatus.pending &&
-      request.status !== HouseJoinRequestStatus.rejected
-    ) {
-      return false;
-    }
-    if (!membership) return true;
-    if (membership.lastLeftAt) {
-      return request.createdAt > membership.lastLeftAt;
-    }
-    return membership.status !== HouseMembershipStatus.left;
   }
 
   private throwHouseNotAvailable(): never {

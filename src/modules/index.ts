@@ -7,3 +7,4 @@ export { DebugModule } from './debug/debug.module';
 export { MeetingsModule } from './meetings/meetings.module';
 export { RequestsModule } from './requests/requests.module';
 export { FilesModule } from './files/files.module';
+export { AdminHousesModule } from './admin-houses/admin-houses.module';

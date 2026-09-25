@@ -15,6 +15,7 @@ import {
   MeetingsModule,
   RequestsModule,
   FilesModule,
+  AdminHousesModule,
 } from './modules';
 import { UserAccountGuard } from '@users/guards/user-account.guard';
 
@@ -32,6 +33,7 @@ import { UserAccountGuard } from '@users/guards/user-account.guard';
     MeetingsModule,
     RequestsModule,
     FilesModule,
+    AdminHousesModule,
   ],
   providers: [
     { provide: APP_GUARD, useExisting: MaxAuthGuard },
