@@ -19,6 +19,11 @@ export class PrismaService
         database: config.get('DB_NAME', { infer: true }),
         allowPublicKeyRetrieval: true,
         connectionLimit: 5,
+        minimumIdle: 0,
+        idleTimeout: 60,
+        sessionVariables: {
+          wait_timeout: 300,
+        },
         connectTimeout: 5000,
         acquireTimeout: 5000,
       }),
