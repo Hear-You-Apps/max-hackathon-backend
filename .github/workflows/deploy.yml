@@ -29,6 +29,8 @@ jobs:
           DB_USER: ${{ vars.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+          MAX_BOT_USERNAME: ${{ vars.MAX_BOT_USERNAME }}
+          MAX_WEBHOOK_SECRET: ${{ secrets.MAX_WEBHOOK_SECRET }}
           MAX_INIT_DATA_MAX_AGE: ${{ vars.MAX_INIT_DATA_MAX_AGE }}
           CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
           API_BIND_PORT: ${{ vars.API_BIND_PORT }}

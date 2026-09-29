@@ -30,6 +30,13 @@ export class Environment {
   @IsNotEmpty()
   MAX_BOT_TOKEN!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  MAX_BOT_USERNAME = 't364_hakaton_max_bot';
+
+  @IsString()
+  MAX_WEBHOOK_SECRET = '';
+
   @Type(() => Number)
   @IsInt()
   @Min(1)

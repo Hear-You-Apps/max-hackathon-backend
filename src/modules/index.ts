@@ -9,3 +9,4 @@ export { PollsModule } from './polls/polls.module';
 export { RequestsModule } from './requests/requests.module';
 export { FilesModule } from './files/files.module';
 export { AdminHousesModule } from './admin-houses/admin-houses.module';
+export { MaxBotModule } from './max-bot/max-bot.module';
