@@ -93,6 +93,14 @@ export class MyHouseMembershipDto {
 }
 
 export class MyHouseDto extends HouseSummaryDto {
+  @ApiProperty({
+    type: 'integer',
+    minimum: 0,
+    example: 286,
+    description: 'Количество подтверждённых жителей дома',
+  })
+  residentsCount!: number;
+
   @ApiProperty({ type: MyHouseMembershipDto })
   membership!: MyHouseMembershipDto;
 }

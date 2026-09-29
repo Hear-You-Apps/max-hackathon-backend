@@ -195,7 +195,18 @@ export class HousesQueryService {
             displayName: true,
             notifyMeetings: true,
             notifyRequests: true,
-            house: { select: houseSelect },
+            house: {
+              select: {
+                ...houseSelect,
+                _count: {
+                  select: {
+                    memberships: {
+                      where: { status: HouseMembershipStatus.approved },
+                    },
+                  },
+                },
+              },
+            },
             roles: { select: { role: true }, orderBy: { role: 'asc' } },
             apartments: {
               orderBy: { apartmentId: 'asc' },
@@ -226,11 +237,12 @@ export class HousesQueryService {
         .filter(
           (membership) => membership.status !== HouseMembershipStatus.left,
         )
-        .map((membership) => ({
-          ...membership.house,
+        .map(({ house: { _count, ...house }, ...membership }) => ({
+          ...house,
+          residentsCount: _count.memberships,
           adminContactUrl:
             membership.status === HouseMembershipStatus.approved
-              ? membership.house.adminContactUrl
+              ? house.adminContactUrl
               : null,
           membership: {
             id: membership.id,

@@ -207,7 +207,7 @@ export class MeetingsService {
 
     const counts = await tx.$queryRaw<
       {
-        meetingId: number;
+        meetingId: bigint;
         participantsCount: bigint;
       }[]
     >`
@@ -218,7 +218,10 @@ export class MeetingsService {
       GROUP BY q.meeting_id
     `;
     return new Map(
-      counts.map((count) => [count.meetingId, Number(count.participantsCount)]),
+      counts.map((count) => [
+        Number(count.meetingId),
+        Number(count.participantsCount),
+      ]),
     );
   }
 }
