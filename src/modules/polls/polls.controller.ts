@@ -51,7 +51,8 @@ export class PollsController {
   @ApiOperation({
     operationId: 'updatePollVotes',
     summary: 'Ответить на опрос',
-    description: 'Ответ можно поменять до конца опроса',
+    description:
+      'До конца опроса можно поменять ответ или сбросить выбор, передав пустой optionIds',
   })
   @ApiOkResponse({ type: PollDto })
   @ApiBadRequestResponse({

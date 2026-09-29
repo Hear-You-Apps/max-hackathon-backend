@@ -161,7 +161,7 @@ export class PollsService {
 
         this.checkVotingAvailable(poll.endsAt);
         if (
-          (!poll.allowMultiple && body.optionIds.length !== 1) ||
+          (!poll.allowMultiple && body.optionIds.length > 1) ||
           body.optionIds.some(
             (optionId) =>
               !poll.options.some((option) => option.id === optionId),
@@ -176,13 +176,15 @@ export class PollsService {
         }
 
         await tx.pollVote.deleteMany({ where: { pollId, userId } });
-        await tx.pollVote.createMany({
-          data: body.optionIds.map((optionId) => ({
-            pollId,
-            userId,
-            optionId,
-          })),
-        });
+        if (body.optionIds.length) {
+          await tx.pollVote.createMany({
+            data: body.optionIds.map((optionId) => ({
+              pollId,
+              userId,
+              optionId,
+            })),
+          });
+        }
         this.checkVotingAvailable(poll.endsAt);
         const polls = await this.toDtos(tx, [poll], userId, new Date());
         return polls.get(pollId)!;
