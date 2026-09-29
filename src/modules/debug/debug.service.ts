@@ -125,8 +125,6 @@ export class DebugService {
           status: HouseMembershipStatus.approved,
           revocationReason: null,
           displayName: request.displayName,
-          notifyMeetings: request.notifyMeetings,
-          notifyRequests: request.notifyRequests,
         };
         const membership = await tx.houseMembership.upsert({
           where: {
@@ -142,10 +140,7 @@ export class DebugService {
           },
           update: {
             ...membershipData,
-            ...(existing?.status === HouseMembershipStatus.approved && {
-              notifyMeetings: existing.notifyMeetings,
-              notifyRequests: existing.notifyRequests,
-            }),
+            ...(existing?.status === HouseMembershipStatus.approved && {}),
           },
         });
         await tx.houseMemberRole.upsert({

@@ -1,31 +1,15 @@
-import { ApiProperty, PickType } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
-  IsDefined,
   IsEnum,
   IsNotEmpty,
-  IsObject,
+  IsOptional,
   IsString,
   MaxLength,
-  ValidateNested,
 } from 'class-validator';
 import { ApartmentRelationship } from '@generated/prisma/enums';
 import { SearchHouseQueryDto } from './search-house-query.dto';
-
-export class JoinHouseNotificationsDto {
-  @ApiProperty({ example: true })
-  @IsBoolean({
-    message: 'Настройка уведомлений о собраниях должна быть true или false',
-  })
-  meetings!: boolean;
-
-  @ApiProperty({ example: true })
-  @IsBoolean({
-    message: 'Настройка уведомлений о заявках должна быть true или false',
-  })
-  requests!: boolean;
-}
 
 export class JoinHouseDto extends PickType(SearchHouseQueryDto, [
   'code',
@@ -55,10 +39,11 @@ export class JoinHouseDto extends PickType(SearchHouseQueryDto, [
   @IsEnum(ApartmentRelationship, { message: 'Укажите owner или tenant' })
   relationship!: ApartmentRelationship;
 
-  @ApiProperty({ type: JoinHouseNotificationsDto })
-  @IsDefined({ message: 'Укажите настройки уведомлений' })
-  @IsObject({ message: 'Настройки уведомлений должны быть объектом' })
-  @ValidateNested()
-  @Type(() => JoinHouseNotificationsDto)
-  notifications!: JoinHouseNotificationsDto;
+  @ApiPropertyOptional({
+    type: Boolean,
+    description: 'Если передано, обновляет уведомления во всех домах',
+  })
+  @IsOptional()
+  @IsBoolean({ message: 'notificationsEnabled должен быть true или false' })
+  notificationsEnabled?: boolean;
 }

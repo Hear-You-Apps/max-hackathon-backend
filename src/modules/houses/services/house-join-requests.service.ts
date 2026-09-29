@@ -130,11 +130,16 @@ export class HouseJoinRequestsService {
             relationship: body.relationship,
             status: HouseJoinRequestStatus.pending,
             createdAt,
-            notifyMeetings: body.notifications.meetings,
-            notifyRequests: body.notifications.requests,
           },
           select: joinRequestSelect,
         });
+
+        if (body.notificationsEnabled !== undefined) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { notificationsEnabled: body.notificationsEnabled },
+          });
+        }
 
         return toJoinRequestResponse(request);
       },

@@ -13,9 +13,5 @@ export function toJoinRequestResponse(
     relationship: request.relationship,
     status: request.status,
     rejectionReason: request.rejectionReason,
-    notifications: {
-      meetings: request.notifyMeetings,
-      requests: request.notifyRequests,
-    },
   };
 }

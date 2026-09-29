@@ -34,8 +34,6 @@ export const joinRequestSelect = {
   status: true,
   createdAt: true,
   rejectionReason: true,
-  notifyMeetings: true,
-  notifyRequests: true,
   house: { select: housePreviewSelect },
 } satisfies Prisma.HouseJoinRequestSelect;
 

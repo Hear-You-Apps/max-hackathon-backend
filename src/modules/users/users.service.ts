@@ -10,6 +10,7 @@ const profileSelect = {
   lastName: true,
   username: true,
   photoUrl: true,
+  notificationsEnabled: true,
 } satisfies Prisma.UserSelect;
 
 @Injectable()
@@ -48,5 +49,17 @@ export class UsersService {
       }
       return this.prisma.user.update({ where, data, select: profileSelect });
     }
+  }
+
+  async updateNotifications(
+    userId: number,
+    enabled: boolean,
+  ): Promise<boolean> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { notificationsEnabled: enabled },
+      select: { notificationsEnabled: true },
+    });
+    return user.notificationsEnabled;
   }
 }

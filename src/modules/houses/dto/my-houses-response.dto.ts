@@ -42,14 +42,6 @@ export class HouseSummaryDto extends HousePreviewDto {
   adminContactUrl!: string | null;
 }
 
-export class HouseNotificationsDto {
-  @ApiProperty({ example: true })
-  meetings!: boolean;
-
-  @ApiProperty({ example: true })
-  requests!: boolean;
-}
-
 export class MyApartmentDto {
   @ApiProperty({ example: 105 })
   id!: number;
@@ -95,9 +87,6 @@ export class MyHouseMembershipDto {
 
   @ApiProperty({ type: [MyApartmentDto] })
   apartments!: MyApartmentDto[];
-
-  @ApiProperty({ type: HouseNotificationsDto })
-  notifications!: HouseNotificationsDto;
 }
 
 export class MyHouseDto extends HouseSummaryDto {
@@ -132,9 +121,6 @@ export class MyHouseJoinRequestDto {
 
   @ApiProperty({ type: String, nullable: true, example: null })
   rejectionReason!: string | null;
-
-  @ApiProperty({ type: HouseNotificationsDto })
-  notifications!: HouseNotificationsDto;
 }
 
 export class MyHousesResponseDto {

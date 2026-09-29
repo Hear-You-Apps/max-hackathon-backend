@@ -182,8 +182,6 @@ export class HousesQueryService {
             lastLeftAt: true,
             revocationReason: true,
             displayName: true,
-            notifyMeetings: true,
-            notifyRequests: true,
             house: { select: houseSelect },
             roles: { select: { role: true }, orderBy: { role: 'asc' } },
             apartments: {
@@ -237,10 +235,6 @@ export class HousesQueryService {
                 verificationStatus,
               }),
             ),
-            notifications: {
-              meetings: membership.notifyMeetings,
-              requests: membership.notifyRequests,
-            },
           },
         })),
       joinRequests: joinRequests

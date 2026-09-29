@@ -15,4 +15,10 @@ export class UserProfileDto {
 
   @ApiProperty({ type: String, nullable: true, example: null })
   photoUrl!: string | null;
+
+  @ApiProperty({
+    type: Boolean,
+    description: 'Уведомления о собраниях и заявках во всех домах',
+  })
+  notificationsEnabled!: boolean;
 }
