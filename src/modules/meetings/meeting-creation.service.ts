@@ -11,6 +11,7 @@ import {
   ApartmentVerificationStatus,
   HouseRole,
   MeetingFormat,
+  VotingAudience,
 } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
@@ -36,6 +37,18 @@ export class MeetingCreationService {
           SELECT id FROM users WHERE id = ${userId} FOR UPDATE
         `;
         await this.houseAccess.checkAccess(tx, userId, houseId);
+        const house = await tx.house.findUnique({
+          where: { id: houseId },
+          select: { apartmentsCount: true },
+        });
+        if (body.participationThresholdPercent && !house?.apartmentsCount) {
+          throw new BadRequestException({
+            statusCode: HttpStatus.BAD_REQUEST,
+            error: 'Bad Request',
+            code: ErrorCode.MEETING_APARTMENTS_COUNT_REQUIRED,
+            message: 'Сначала укажите количество квартир в доме',
+          });
+        }
 
         const membership = await tx.houseMembership.findUnique({
           where: { userId_houseId: { userId, houseId } },
@@ -72,24 +85,35 @@ export class MeetingCreationService {
           });
         }
 
-        const startsAt = new Date(body.startsAt);
+        if (Boolean(body.question) === Boolean(body.questions)) {
+          throw new BadRequestException({
+            statusCode: HttpStatus.BAD_REQUEST,
+            error: 'Bad Request',
+            code: ErrorCode.INVALID_MEETING_QUESTIONS,
+            message: 'Передайте один question или список questions',
+          });
+        }
+        const questions = body.questions ?? [{ title: body.question! }];
+        const format = body.format ?? MeetingFormat.absentee;
+        const now = new Date();
+        const startsAt = body.startsAt ? new Date(body.startsAt) : now;
         const endsAt = new Date(body.endsAt);
         if (
           !Number.isFinite(startsAt.getTime()) ||
           !Number.isFinite(endsAt.getTime()) ||
-          startsAt <= new Date() ||
+          (body.startsAt && startsAt <= now) ||
           endsAt <= startsAt ||
+          startsAt.getUTCFullYear() > 9999 ||
           endsAt.getUTCFullYear() > 9999
         ) {
           throw new BadRequestException({
             statusCode: HttpStatus.BAD_REQUEST,
             error: 'Bad Request',
             code: ErrorCode.INVALID_MEETING_DATES,
-            message:
-              'Начало должно быть в будущем, окончание позже начала. Проверьте даты',
+            message: 'Проверьте даты начала и окончания собрания',
           });
         }
-        if (body.format !== MeetingFormat.absentee && !body.location) {
+        if (format !== MeetingFormat.absentee && !body.location) {
           throw new BadRequestException({
             statusCode: HttpStatus.BAD_REQUEST,
             error: 'Bad Request',
@@ -102,15 +126,18 @@ export class MeetingCreationService {
           data: {
             houseId,
             authorId: userId,
-            title: body.title,
+            title: body.title ?? questions[0].title.slice(0, 255),
             description: body.description || null,
-            format: body.format,
+            format,
+            audience: body.audience ?? VotingAudience.owners,
             location: body.location || null,
             startsAt,
             endsAt,
+            participationThresholdPercent:
+              body.participationThresholdPercent ?? null,
             questions: {
               createMany: {
-                data: body.questions.map((question, index) => ({
+                data: questions.map((question, index) => ({
                   title: question.title,
                   sortOrder: index,
                 })),
@@ -126,7 +153,13 @@ export class MeetingCreationService {
           },
         });
         return {
-          ...toMeetingResponse(meeting, new Date(), 0),
+          ...toMeetingResponse(
+            meeting,
+            new Date(),
+            0,
+            0,
+            house?.apartmentsCount ?? null,
+          ),
           description: meeting.description,
           participation:
             meeting.format === MeetingFormat.absentee

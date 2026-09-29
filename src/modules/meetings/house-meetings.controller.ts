@@ -40,12 +40,12 @@ export class HouseMeetingsController {
     operationId: 'createMeeting',
     summary: 'Создание собрания',
     description:
-      'Доступно подтверждённым собственникам, организаторам, совету дома и админам. Собрание сразу появится в списке, без модерации',
+      'Можно передать один question со сроком или полную повестку. Доступно собственникам, организаторам, совету дома и админам',
   })
   @ApiCreatedResponse({ type: MeetingDetailsResponseDto })
   @ApiBadRequestResponse({
     type: ErrorResponseDto,
-    description: `Неверные поля, даты (${ErrorCode.INVALID_MEETING_DATES}) или не указано место (${ErrorCode.MEETING_LOCATION_REQUIRED})`,
+    description: `Проверьте вопрос, даты, место и число квартир для порога (${ErrorCode.INVALID_MEETING_QUESTIONS}, ${ErrorCode.MEETING_APARTMENTS_COUNT_REQUIRED})`,
   })
   @ApiForbiddenResponse({
     type: ErrorResponseDto,
@@ -66,9 +66,9 @@ export class HouseMeetingsController {
   @Get()
   @ApiOperation({
     operationId: 'getHouseMeetings',
-    summary: 'Получение собраний дома',
+    summary: 'Собрания и опросы дома',
     description:
-      'Актуальные идут по дате начала от ближайших, прошедшие по дате окончания от новых. Доступно подтверждённым жителям дома',
+      'Общий список для главной. Актуальные идут по дате начала, прошедшие по дате окончания. Доступно подтверждённым жителям дома',
   })
   @ApiOkResponse({ type: MeetingsResponseDto })
   @ApiBadRequestResponse({

@@ -74,7 +74,7 @@ export class MeetingsController {
     operationId: 'updateMeetingVotes',
     summary: 'Голосование по вопросам собрания',
     description:
-      'Предварительное голосование для подтверждённых собственников. Можно ответить на один вопрос или несколько и поменять ответ до окончания. Остальные ответы сохраняются',
+      'Кто может голосовать зависит от аудитории собрания. Ответ можно поменять до окончания',
   })
   @ApiOkResponse({ type: MeetingVotesResponseDto })
   @ApiBadRequestResponse({
@@ -83,7 +83,7 @@ export class MeetingsController {
   })
   @ApiForbiddenResponse({
     type: ErrorResponseDto,
-    description: `Нет подтверждённой квартиры собственника (${ErrorCode.MEETING_VOTE_FORBIDDEN})`,
+    description: `Для собрания собственников нет подтверждённой квартиры (${ErrorCode.MEETING_VOTE_FORBIDDEN})`,
   })
   @ApiNotFoundResponse({
     type: ErrorResponseDto,

@@ -7,14 +7,17 @@ import {
   IsDateString,
   IsEnum,
   IsNotEmpty,
+  IsInt,
   IsObject,
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
-import { MeetingFormat } from '@generated/prisma/enums';
+import { MeetingFormat, VotingAudience } from '@generated/prisma/enums';
 
 export class CreateMeetingQuestionDto {
   @ApiProperty({ example: 'Установить шлагбаум во дворе?', maxLength: 2000 })
@@ -28,14 +31,33 @@ export class CreateMeetingQuestionDto {
 }
 
 export class CreateMeetingDto {
-  @ApiProperty({ example: 'Установка шлагбаума во дворе', maxLength: 255 })
+  @ApiPropertyOptional({
+    example: 'Установка шлагбаума во дворе',
+    maxLength: 255,
+    description: 'Название собрания, если вопросов несколько',
+  })
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'Название должно быть строкой' })
   @IsNotEmpty({ message: 'Укажите название собрания' })
   @MaxLength(255, { message: 'Название должно быть не длиннее 255 символов' })
-  title!: string;
+  title?: string;
+
+  @ApiPropertyOptional({
+    example: 'Установить шлагбаум во дворе?',
+    maxLength: 2000,
+    description: 'Один вопрос для простого собрания, вместо questions',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Вопрос должен быть строкой' })
+  @IsNotEmpty({ message: 'Заполните вопрос' })
+  @MaxLength(2000, { message: 'Вопрос должен быть не длиннее 2000 символов' })
+  question?: string;
 
   @ApiPropertyOptional({
     type: String,
@@ -53,13 +75,25 @@ export class CreateMeetingDto {
   })
   description?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: MeetingFormat,
     enumName: 'MeetingFormat',
     description: 'in_person: очная, absentee: заочная, mixed: очно-заочная',
+    default: MeetingFormat.absentee,
   })
+  @IsOptional()
   @IsEnum(MeetingFormat, { message: 'Выберите in_person, absentee или mixed' })
-  format!: MeetingFormat;
+  format?: MeetingFormat;
+
+  @ApiPropertyOptional({
+    enum: VotingAudience,
+    enumName: 'VotingAudience',
+    default: VotingAudience.owners,
+    description: 'all_residents: все жители, owners: только собственники',
+  })
+  @IsOptional()
+  @IsEnum(VotingAudience, { message: 'Выберите кто отвечает на собрании' })
+  audience?: VotingAudience;
 
   @ApiPropertyOptional({
     type: String,
@@ -78,12 +112,13 @@ export class CreateMeetingDto {
   })
   location?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: String,
     format: 'date-time',
     example: '2026-10-01T16:00:00.000Z',
-    description: 'Начало собрания с часовым поясом, дата должна быть в будущем',
+    description: 'Начало собрания, если нужно запланировать его на будущее',
   })
+  @IsOptional()
   @IsDateString(
     { strict: true, strictSeparator: true },
     {
@@ -93,7 +128,7 @@ export class CreateMeetingDto {
   @Matches(/(?:Z|[+-]\d{2}:\d{2})$/, {
     message: 'Укажите часовой пояс даты начала',
   })
-  startsAt!: string;
+  startsAt?: string;
 
   @ApiProperty({
     type: String,
@@ -112,12 +147,13 @@ export class CreateMeetingDto {
   })
   endsAt!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: [CreateMeetingQuestionDto],
     minItems: 1,
     maxItems: 100,
-    description: 'Вопросы в порядке повестки',
+    description: 'Вопросы повестки, вместо одного question',
   })
+  @IsOptional()
   @IsArray({ message: 'Повестка должна быть массивом вопросов' })
   @ArrayMinSize(1, { message: 'Добавьте хотя бы один вопрос' })
   @ArrayMaxSize(100, {
@@ -126,5 +162,20 @@ export class CreateMeetingDto {
   @IsObject({ each: true, message: 'Каждый вопрос должен быть объектом' })
   @ValidateNested({ each: true })
   @Type(() => CreateMeetingQuestionDto)
-  questions!: CreateMeetingQuestionDto[];
+  questions?: CreateMeetingQuestionDto[];
+
+  @ApiPropertyOptional({
+    type: 'integer',
+    nullable: true,
+    minimum: 1,
+    maximum: 100,
+    example: 50,
+    description: 'Порог участия от числа квартир, null если не нужен',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Порог участия должен быть целым процентом' })
+  @Min(1, { message: 'Порог участия должен быть от 1 до 100%' })
+  @Max(100, { message: 'Порог участия должен быть от 1 до 100%' })
+  participationThresholdPercent?: number | null;
 }

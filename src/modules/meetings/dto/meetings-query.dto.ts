@@ -31,7 +31,7 @@ export class MeetingsQueryDto {
     default: 20,
     minimum: 1,
     maximum: 100,
-    description: 'Количество собраний на странице',
+    description: 'Количество собраний и опросов на странице',
   })
   @Type(() => Number)
   @IsInt({ message: 'Размер страницы должен быть целым числом' })

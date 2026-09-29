@@ -21,6 +21,8 @@ model User {
   meetings              Meeting[]
   meetingVotes          MeetingVote[]
   meetingParticipations MeetingParticipation[]
+  polls                 Poll[]
+  pollVotes             PollVote[]
   serviceRequests       ServiceRequest[]
   files                 StoredFile[]
 
@@ -93,6 +95,11 @@ enum MeetingVoteChoice {
   abstain
 }
 
+enum VotingAudience {
+  all_residents
+  owners
+}
+
 enum RequestCategory {
   management
   electrician
@@ -138,6 +145,7 @@ model House {
   events          HouseEvent[]
   chats           HouseChat[]
   meetings        Meeting[]
+  polls           Poll[]
   serviceRequests ServiceRequest[]
   files           StoredFile[]
 
@@ -287,16 +295,18 @@ model HouseJoinRequest {
 }
 
 model Meeting {
-  id          Int           @id @default(autoincrement()) @db.UnsignedInt
-  houseId     Int           @map("house_id") @db.UnsignedInt
-  authorId    Int?          @map("author_id") @db.UnsignedInt
-  title       String        @db.VarChar(255)
-  description String?       @db.Text
-  format      MeetingFormat @default(absentee)
-  location    String?       @db.VarChar(500)
-  startsAt    DateTime      @map("starts_at") @db.DateTime(3)
-  endsAt      DateTime      @map("ends_at") @db.DateTime(3)
-  isCancelled Boolean       @default(false) @map("is_cancelled")
+  id                            Int            @id @default(autoincrement()) @db.UnsignedInt
+  houseId                       Int            @map("house_id") @db.UnsignedInt
+  authorId                      Int?           @map("author_id") @db.UnsignedInt
+  title                         String         @db.VarChar(255)
+  description                   String?        @db.Text
+  format                        MeetingFormat  @default(absentee)
+  location                      String?        @db.VarChar(500)
+  startsAt                      DateTime       @map("starts_at") @db.DateTime(3)
+  endsAt                        DateTime       @map("ends_at") @db.DateTime(3)
+  isCancelled                   Boolean        @default(false) @map("is_cancelled")
+  participationThresholdPercent Int?           @map("participation_threshold_percent") @db.UnsignedTinyInt
+  audience                      VotingAudience @default(owners)
 
   house          House                  @relation(fields: [houseId], references: [id])
   author         User?                  @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -305,6 +315,52 @@ model Meeting {
 
   @@index([houseId, isCancelled, endsAt, id])
   @@map("meetings")
+}
+
+model Poll {
+  id            Int            @id @default(autoincrement()) @db.UnsignedInt
+  houseId       Int            @map("house_id") @db.UnsignedInt
+  authorId      Int?           @map("author_id") @db.UnsignedInt
+  question      String         @db.VarChar(2000)
+  audience      VotingAudience
+  allowMultiple Boolean        @default(false) @map("allow_multiple")
+  endsAt        DateTime       @map("ends_at") @db.DateTime(3)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+
+  house   House        @relation(fields: [houseId], references: [id])
+  author  User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([houseId, endsAt, id])
+  @@map("polls")
+}
+
+model PollOption {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  pollId    Int    @map("poll_id") @db.UnsignedInt
+  title     String @db.VarChar(255)
+  sortOrder Int    @map("sort_order") @db.UnsignedInt
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId, sortOrder, id])
+  @@map("poll_options")
+}
+
+model PollVote {
+  pollId   Int @map("poll_id") @db.UnsignedInt
+  userId   Int @map("user_id") @db.UnsignedInt
+  optionId Int @map("option_id") @db.UnsignedInt
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@id([pollId, userId, optionId])
+  @@index([pollId, optionId])
+  @@map("poll_votes")
 }
 
 model MeetingQuestion {

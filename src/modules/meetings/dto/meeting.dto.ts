@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MeetingFormat, MeetingVoteChoice } from '@generated/prisma/enums';
+import {
+  MeetingFormat,
+  MeetingVoteChoice,
+  VotingAudience,
+} from '@generated/prisma/enums';
 import { MeetingStatus } from '../enums/meeting-status.enum';
 
 export class MeetingVoteResultsDto {
@@ -52,6 +56,9 @@ export class MeetingDto {
   })
   format!: MeetingFormat;
 
+  @ApiProperty({ enum: VotingAudience, enumName: 'VotingAudience' })
+  audience!: VotingAudience;
+
   @ApiProperty({
     enum: MeetingStatus,
     enumName: 'MeetingStatus',
@@ -59,6 +66,13 @@ export class MeetingDto {
       'scheduled: ещё не началось, active: идёт, closed: завершено, cancelled: отменено',
   })
   status!: MeetingStatus;
+
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Голосование закончено, результаты больше не меняются от новых голосов',
+  })
+  resultsFinal!: boolean;
 
   @ApiProperty({
     type: String,
@@ -88,9 +102,43 @@ export class MeetingDto {
       'Пользователи, ответившие хотя бы на один вопрос. Каждый считается один раз',
   })
   participantsCount!: number;
+
+  @ApiProperty({
+    type: 'integer',
+    nullable: true,
+    example: 50,
+    description: 'Порог участия от числа квартир, null если не задан',
+  })
+  participationThresholdPercent!: number | null;
+
+  @ApiProperty({
+    type: 'integer',
+    nullable: true,
+    example: 412,
+    description: 'Количество квартир дома, null если не указано',
+  })
+  apartmentsCount!: number | null;
+
+  @ApiProperty({
+    type: 'integer',
+    example: 213,
+    description: 'Квартиры, от которых голосовали или отметили «Приду»',
+  })
+  participatingApartmentsCount!: number;
+
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description:
+      'null если порог участия не задан или число квартир неизвестно',
+  })
+  participationThresholdReached!: boolean | null;
 }
 
 export class MeetingListItemDto extends MeetingDto {
+  @ApiProperty({ enum: ['meeting'] })
+  type!: 'meeting';
+
   @ApiProperty({
     type: 'integer',
     example: 3,

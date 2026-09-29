@@ -14,6 +14,7 @@ import {
   ApartmentVerificationStatus,
   MeetingFormat,
   MeetingVoteChoice,
+  VotingAudience,
 } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
@@ -47,6 +48,7 @@ export class MeetingVotesService {
           select: {
             houseId: true,
             format: true,
+            audience: true,
             startsAt: true,
             endsAt: true,
             isCancelled: true,
@@ -68,8 +70,10 @@ export class MeetingVotesService {
           where: {
             houseId: meeting.houseId,
             membership: { userId },
-            relationship: ApartmentRelationship.owner,
             verificationStatus: ApartmentVerificationStatus.verified,
+            ...(meeting.audience === VotingAudience.owners
+              ? { relationship: ApartmentRelationship.owner }
+              : {}),
           },
           select: { apartmentId: true },
         });
@@ -78,7 +82,10 @@ export class MeetingVotesService {
             statusCode: HttpStatus.FORBIDDEN,
             error: 'Forbidden',
             code: ErrorCode.MEETING_VOTE_FORBIDDEN,
-            message: 'Голосовать могут только подтверждённые собственники',
+            message:
+              meeting.audience === VotingAudience.owners
+                ? 'Голосовать могут только подтверждённые собственники'
+                : 'Голосовать могут только подтверждённые жители',
           });
         }
 
