@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@prisma/prisma.module';
 import { HousesModule } from '../houses/houses.module';
+import { MaxBotModule } from '../max-bot/max-bot.module';
 import { PollsModule } from '../polls/polls.module';
 import { HouseMeetingsController } from './house-meetings.controller';
 import { MeetingsController } from './meetings.controller';
@@ -10,7 +11,7 @@ import { MeetingVotesService } from './meeting-votes.service';
 import { MeetingParticipationService } from './meeting-participation.service';
 
 @Module({
-  imports: [PrismaModule, HousesModule, PollsModule],
+  imports: [PrismaModule, HousesModule, PollsModule, MaxBotModule],
   controllers: [HouseMeetingsController, MeetingsController],
   providers: [
     MeetingsService,

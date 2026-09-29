@@ -15,6 +15,7 @@ import {
 } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
+import { MaxBotService } from '../max-bot/max-bot.service';
 import type { CreateMeetingDto } from './dto/create-meeting.dto';
 import type { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
 import { toMeetingResponse } from './internal/meeting.mapper';
@@ -24,6 +25,7 @@ export class MeetingCreationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly houseAccess: HouseAccessService,
+    private readonly bot: MaxBotService,
   ) {}
 
   async create(
@@ -31,7 +33,7 @@ export class MeetingCreationService {
     houseId: number,
     body: CreateMeetingDto,
   ): Promise<MeetingDetailsResponseDto> {
-    return this.prisma.$transaction(
+    const created = await this.prisma.$transaction(
       async (tx) => {
         await tx.$queryRaw`
           SELECT id FROM users WHERE id = ${userId} FOR UPDATE
@@ -182,5 +184,7 @@ export class MeetingCreationService {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
     );
+    this.bot.notifyMeetingCreated(houseId, created.id, created.title);
+    return created;
   }
 }

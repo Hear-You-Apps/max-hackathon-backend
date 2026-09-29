@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { setTimeout } from 'node:timers/promises';
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import type { Update } from '@maxhub/max-bot-api/types';
 import {
@@ -11,11 +12,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@config/environment';
 import { ErrorCode } from '@common/enums/error-code.enum';
+import { HouseMembershipStatus } from '@generated/prisma/enums';
+import { PrismaService } from '@prisma/prisma.service';
 
 const WELCOME_MESSAGE =
   'Привет! Это «Совет дома» — мини-приложение для жителей вашего дома.\n\n' +
   'Там можно узнать новости дома, участвовать в собраниях и опросах, отправлять заявки и следить за их решением.\n\n' +
   'Все действия - в мини-приложении, а сюда будут приходить уведомления.';
+const MESSAGE_INTERVAL_MS = 50; // лимит MAX — 30 запросов в секунду
 
 @Injectable()
 export class MaxBotService {
@@ -23,8 +27,12 @@ export class MaxBotService {
   private readonly bot: Bot;
   private readonly username: string;
   private readonly webhookSecret: string;
+  private notifications: Promise<void> = Promise.resolve();
 
-  constructor(config: ConfigService<Environment, true>) {
+  constructor(
+    config: ConfigService<Environment, true>,
+    private readonly prisma: PrismaService,
+  ) {
     this.bot = new Bot(config.get('MAX_BOT_TOKEN', { infer: true }));
     this.username = config.get('MAX_BOT_USERNAME', { infer: true });
     this.webhookSecret = config.get('MAX_WEBHOOK_SECRET', { infer: true });
@@ -74,6 +82,78 @@ export class MaxBotService {
     } catch {
       this.logger.error('Не удалось связаться с MAX');
       throw this.messageFailed();
+    }
+  }
+
+  notifyMeetingCreated(
+    houseId: number,
+    meetingId: number,
+    title: string,
+  ): void {
+    this.notifications = this.notifications
+      .then(() => this.sendMeetingCreated(houseId, meetingId, title))
+      .catch(() => {
+        this.logger.error(
+          `Не удалось подготовить уведомления о собрании ${meetingId}`,
+        );
+      });
+  }
+
+  private async sendMeetingCreated(
+    houseId: number,
+    meetingId: number,
+    title: string,
+  ): Promise<void> {
+    const house = await this.prisma.house.findUnique({
+      where: { id: houseId },
+      select: {
+        address: true,
+        memberships: {
+          where: {
+            status: HouseMembershipStatus.approved,
+            user: { notificationsEnabled: true },
+          },
+          select: { user: { select: { maxId: true } } },
+        },
+      },
+    });
+    if (!house) return;
+
+    const text = `Новое собрание в доме ${house.address}\n\n${title}`;
+    const keyboard = Keyboard.inlineKeyboard([
+      [
+        Keyboard.button.openApp(
+          'Открыть собрание',
+          this.username,
+          undefined,
+          `meeting_${meetingId}`,
+        ),
+      ],
+    ]);
+
+    let failed = 0;
+
+    for (const membership of house.memberships) {
+      const maxId = Number(membership.user.maxId);
+      if (!Number.isSafeInteger(maxId)) {
+        failed++;
+        continue;
+      }
+
+      try {
+        await this.bot.api.sendMessageToUser(maxId, text, {
+          attachments: [keyboard],
+        });
+      } catch {
+        failed++;
+      }
+      await setTimeout(MESSAGE_INTERVAL_MS);
+    }
+
+    if (failed) {
+      this.logger.warn(
+        `Не доставили уведомление о собрании ${meetingId}: ${failed} из ${house.memberships.length}`,
+      );
     }
   }
 
