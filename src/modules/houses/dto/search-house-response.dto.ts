@@ -5,13 +5,7 @@ import {
   MyHouseMembershipDto,
 } from './my-houses-response.dto';
 
-export class FoundHouseDto extends HousePreviewDto {
-  @ApiProperty({
-    example: 286,
-    description: 'Количество пользователей с подтверждённым доступом к дому',
-  })
-  residentsCount!: number;
-}
+export class FoundHouseDto extends HousePreviewDto {}
 
 export class SearchHouseResponseDto {
   @ApiProperty({ type: FoundHouseDto })

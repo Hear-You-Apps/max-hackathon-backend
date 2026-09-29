@@ -1,4 +1,5 @@
 import type { Prisma } from '@generated/prisma/client';
+import { HouseMembershipStatus } from '@generated/prisma/enums';
 
 export const housePreviewSelect = {
   id: true,
@@ -6,7 +7,18 @@ export const housePreviewSelect = {
   managementCompanyName: true,
   apartmentsCount: true,
   entrancesCount: true,
+  _count: {
+    select: {
+      memberships: {
+        where: { status: HouseMembershipStatus.approved },
+      },
+    },
+  },
 } satisfies Prisma.HouseSelect;
+
+export type HousePreviewData = Prisma.HouseGetPayload<{
+  select: typeof housePreviewSelect;
+}>;
 
 export const houseSelect = {
   ...housePreviewSelect,

@@ -1,14 +1,11 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
-import {
-  HouseJoinRequestStatus,
-  HouseMembershipStatus,
-  RequestStatus,
-} from '@generated/prisma/enums';
+import { HouseJoinRequestStatus, RequestStatus } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
 import { housePreviewSelect } from '../houses/internal/house.selects';
+import { toHouseResponse } from '../houses/internal/house.mapper';
 import { isCurrentJoinRequest } from '../houses/internal/house-join-request.rules';
 import type { AdminHouseOverviewResponseDto } from './dto/admin-house-overview-response.dto';
 
@@ -34,7 +31,6 @@ export class AdminHousesService {
           house,
           newRequestsCount,
           openRequestsCount,
-          residentsCount,
           activeMeetingsCount,
           requests,
           joinRequests,
@@ -51,9 +47,6 @@ export class AdminHousesService {
                 notIn: [RequestStatus.closed, RequestStatus.cancelled],
               },
             },
-          }),
-          tx.houseMembership.count({
-            where: { houseId, status: HouseMembershipStatus.approved },
           }),
           tx.meeting.count({
             where: {
@@ -116,13 +109,14 @@ export class AdminHousesService {
               a.createdAt.getTime() - b.createdAt.getTime() || a.id - b.id,
           );
 
+        const houseInfo = toHouseResponse(house);
         return {
-          house,
+          house: houseInfo,
           stats: {
             newRequestsCount,
             openRequestsCount,
             pendingJoinRequestsCount: pendingJoinRequests.length,
-            residentsCount,
+            residentsCount: houseInfo.residentsCount,
             activeMeetingsCount,
           },
           attention: {

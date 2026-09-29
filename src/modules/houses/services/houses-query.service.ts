@@ -19,6 +19,7 @@ import {
 import type { HouseEventData } from '../internal/house.selects';
 import { checkInvitation } from '../internal/house-invitation.rules';
 import { toJoinRequestResponse } from '../internal/house-join-request.mapper';
+import { toHouseResponse } from '../internal/house.mapper';
 import { isCurrentJoinRequest } from '../internal/house-join-request.rules';
 import { HouseEventsPeriod } from '../enums/house-events-period.enum';
 import { HouseAccessService } from './house-access.service';
@@ -132,7 +133,7 @@ export class HousesQueryService {
 
         const { contacts, events, paymentUrl, ...info } = house;
         return {
-          house: info,
+          house: toHouseResponse(info),
           contacts,
           utilities: { paymentUrl },
           upcomingEvents: events.map((event) => this.toEventResponse(event)),
@@ -149,18 +150,7 @@ export class HousesQueryService {
         houseId: true,
         expiresAt: true,
         revokedAt: true,
-        house: {
-          select: {
-            ...housePreviewSelect,
-            _count: {
-              select: {
-                memberships: {
-                  where: { status: HouseMembershipStatus.approved },
-                },
-              },
-            },
-          },
-        },
+        house: { select: housePreviewSelect },
       },
     });
 
@@ -170,9 +160,8 @@ export class HousesQueryService {
       userId,
       invitation.houseId,
     );
-    const { _count, ...house } = invitation.house;
     return {
-      house: { ...house, residentsCount: _count.memberships },
+      house: toHouseResponse(invitation.house),
       membership: houses[0]?.membership ?? null,
       joinRequest: joinRequests[0] ?? null,
     };
@@ -195,18 +184,7 @@ export class HousesQueryService {
             displayName: true,
             notifyMeetings: true,
             notifyRequests: true,
-            house: {
-              select: {
-                ...houseSelect,
-                _count: {
-                  select: {
-                    memberships: {
-                      where: { status: HouseMembershipStatus.approved },
-                    },
-                  },
-                },
-              },
-            },
+            house: { select: houseSelect },
             roles: { select: { role: true }, orderBy: { role: 'asc' } },
             apartments: {
               orderBy: { apartmentId: 'asc' },
@@ -237,9 +215,8 @@ export class HousesQueryService {
         .filter(
           (membership) => membership.status !== HouseMembershipStatus.left,
         )
-        .map(({ house: { _count, ...house }, ...membership }) => ({
-          ...house,
-          residentsCount: _count.memberships,
+        .map(({ house, ...membership }) => ({
+          ...toHouseResponse(house),
           adminContactUrl:
             membership.status === HouseMembershipStatus.approved
               ? house.adminContactUrl
