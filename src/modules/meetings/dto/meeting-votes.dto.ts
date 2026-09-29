@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
-  ArrayMinSize,
   ArrayUnique,
   IsArray,
   IsEnum,
@@ -45,12 +44,12 @@ export class MeetingVoteDto {
 export class UpdateMeetingVotesDto {
   @ApiProperty({
     type: [MeetingVoteDto],
-    minItems: 1,
+    minItems: 0,
     maxItems: 100,
-    description: 'Ответы на вопросы без повторяющихся questionId',
+    description:
+      'Ответы без повторяющихся questionId. Меняются только переданные ответы, пустой массив сбрасывает все свои ответы',
   })
   @IsArray({ message: 'Голоса должны быть массивом' })
-  @ArrayMinSize(1, { message: 'Ответьте хотя бы на один вопрос' })
   @ArrayMaxSize(100, {
     message: 'За раз можно отправить не больше 100 ответов',
   })

@@ -91,6 +91,14 @@ export class MeetingVotesService {
 
         this.checkVotingAvailable(meeting);
 
+        if (!body.votes.length) {
+          await tx.meetingVote.deleteMany({
+            where: { userId, question: { meetingId } },
+          });
+          this.checkVotingAvailable(meeting);
+          return { votes: [] };
+        }
+
         const questionIds = body.votes.map((vote) => vote.questionId);
         const questionsCount = await tx.meetingQuestion.count({
           where: { meetingId, id: { in: questionIds } },

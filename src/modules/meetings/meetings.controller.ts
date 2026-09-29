@@ -74,7 +74,7 @@ export class MeetingsController {
     operationId: 'updateMeetingVotes',
     summary: 'Голосование по вопросам собрания',
     description:
-      'Кто может голосовать зависит от аудитории собрания. Ответ можно поменять до окончания',
+      'Кто может голосовать зависит от аудитории собрания. Пока голосование открыто, можно менять ответы или сбросить все свои ответы, передав пустой votes',
   })
   @ApiOkResponse({ type: MeetingVotesResponseDto })
   @ApiBadRequestResponse({
