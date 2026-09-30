@@ -90,19 +90,33 @@ export class MaxBotService {
     meetingId: number,
     title: string,
   ): void {
+    this.notifyCreated(houseId, meetingId, title, 'meeting');
+  }
+
+  notifyPollCreated(houseId: number, pollId: number, question: string): void {
+    this.notifyCreated(houseId, pollId, question, 'poll');
+  }
+
+  private notifyCreated(
+    houseId: number,
+    id: number,
+    title: string,
+    type: 'meeting' | 'poll',
+  ): void {
     this.notifications = this.notifications
-      .then(() => this.sendMeetingCreated(houseId, meetingId, title))
+      .then(() => this.sendCreated(houseId, id, title, type))
       .catch(() => {
         this.logger.error(
-          `Не удалось подготовить уведомления о собрании ${meetingId}`,
+          `Не удалось подготовить уведомления ${type === 'meeting' ? 'о собрании' : 'об опросе'} ${id}`,
         );
       });
   }
 
-  private async sendMeetingCreated(
+  private async sendCreated(
     houseId: number,
-    meetingId: number,
+    id: number,
     title: string,
+    type: 'meeting' | 'poll',
   ): Promise<void> {
     const house = await this.prisma.house.findUnique({
       where: { id: houseId },
@@ -119,14 +133,14 @@ export class MaxBotService {
     });
     if (!house) return;
 
-    const text = `Новое собрание в доме ${house.address}\n\n${title}`;
+    const text = `${type === 'meeting' ? 'Новое собрание' : 'Новый опрос'} в доме ${house.address}\n\n${title}`;
     const keyboard = Keyboard.inlineKeyboard([
       [
         Keyboard.button.openApp(
-          'Открыть собрание',
+          type === 'meeting' ? 'Открыть собрание' : 'Открыть опрос',
           this.username,
           undefined,
-          `meeting_${meetingId}`,
+          `${type}_${id}`,
         ),
       ],
     ]);
@@ -152,7 +166,7 @@ export class MaxBotService {
 
     if (failed) {
       this.logger.warn(
-        `Не доставили уведомление о собрании ${meetingId}: ${failed} из ${house.memberships.length}`,
+        `Не доставили уведомление ${type === 'meeting' ? 'о собрании' : 'об опросе'} ${id}: ${failed} из ${house.memberships.length}`,
       );
     }
   }

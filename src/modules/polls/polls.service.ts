@@ -15,6 +15,7 @@ import {
 } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
+import { MaxBotService } from '../max-bot/max-bot.service';
 import type { CreatePollDto } from './dto/create-poll.dto';
 import type { PollDto } from './dto/poll.dto';
 import type { UpdatePollVotesDto } from './dto/update-poll-votes.dto';
@@ -39,6 +40,7 @@ export class PollsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly houseAccess: HouseAccessService,
+    private readonly bot: MaxBotService,
   ) {}
 
   async create(
@@ -72,7 +74,7 @@ export class PollsService {
       });
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       await this.houseAccess.checkAccess(tx, userId, houseId);
 
       const poll = await tx.poll.create({
@@ -98,6 +100,8 @@ export class PollsService {
       const polls = await this.toDtos(tx, [poll], userId, new Date());
       return polls.get(poll.id)!;
     });
+    this.bot.notifyPollCreated(houseId, created.id, created.question);
+    return created;
   }
 
   async findOne(userId: number, pollId: number): Promise<PollDto> {
