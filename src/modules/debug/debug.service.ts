@@ -11,12 +11,52 @@ import {
   HouseJoinRequestStatus,
   HouseMembershipStatus,
   HouseRole,
+  RequestStatus,
 } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
+import { MaxBotService } from '../max-bot/max-bot.service';
 
 @Injectable()
 export class DebugService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bot: MaxBotService,
+  ) {}
+
+  async updateRequestStatus(
+    requestId: number,
+    status: RequestStatus,
+    comment?: string | null,
+  ): Promise<void> {
+    const changed = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.serviceRequest.updateMany({
+        where: { id: requestId, status: { not: status } },
+        data: { status },
+      });
+      if (updated.count) {
+        await tx.requestEvent.create({
+          data: { requestId, status, comment: comment || null },
+        });
+        return true;
+      }
+
+      const request = await tx.serviceRequest.findUnique({
+        where: { id: requestId },
+        select: { id: true },
+      });
+      if (!request) {
+        throw new NotFoundException({
+          statusCode: HttpStatus.NOT_FOUND,
+          error: 'Not Found',
+          code: ErrorCode.REQUEST_NOT_AVAILABLE,
+          message: 'Заявка не найдена',
+        });
+      }
+      return false;
+    });
+    if (changed)
+      this.bot.notifyRequestStatusChanged(requestId, status, comment);
+  }
 
   async deleteUser(userId: number): Promise<void> {
     await this.prisma.$transaction(

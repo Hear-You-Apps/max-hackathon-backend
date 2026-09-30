@@ -12,7 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Environment } from '@config/environment';
 import { ErrorCode } from '@common/enums/error-code.enum';
-import { HouseMembershipStatus } from '@generated/prisma/enums';
+import { HouseMembershipStatus, RequestStatus } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 
 const WELCOME_MESSAGE =
@@ -20,6 +20,14 @@ const WELCOME_MESSAGE =
   'Там можно узнать новости дома, участвовать в собраниях и опросах, отправлять заявки и следить за их решением.\n\n' +
   'Все действия - в мини-приложении, а сюда будут приходить уведомления.';
 const MESSAGE_INTERVAL_MS = 50; // лимит MAX — 30 запросов в секунду
+const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
+  submitted: 'Отправлена',
+  in_review: 'На рассмотрении',
+  in_progress: 'Решается',
+  resolved: 'Решена, ждёт подтверждения',
+  closed: 'Закрыта',
+  cancelled: 'Отменена',
+};
 
 @Injectable()
 export class MaxBotService {
@@ -95,6 +103,77 @@ export class MaxBotService {
 
   notifyPollCreated(houseId: number, pollId: number, question: string): void {
     this.notifyCreated(houseId, pollId, question, 'poll');
+  }
+
+  notifyRequestStatusChanged(
+    requestId: number,
+    status: RequestStatus,
+    comment?: string | null,
+  ): void {
+    this.notifications = this.notifications
+      .then(() => this.sendRequestStatusChanged(requestId, status, comment))
+      .catch(() => {
+        this.logger.error(
+          `Не удалось подготовить уведомление о заявке ${requestId}`,
+        );
+      });
+  }
+
+  private async sendRequestStatusChanged(
+    requestId: number,
+    status: RequestStatus,
+    comment?: string | null,
+  ): Promise<void> {
+    const request = await this.prisma.serviceRequest.findUnique({
+      where: { id: requestId },
+      select: {
+        houseId: true,
+        title: true,
+        house: { select: { address: true } },
+        author: {
+          select: { id: true, maxId: true, notificationsEnabled: true },
+        },
+      },
+    });
+    if (!request?.author?.notificationsEnabled) return;
+
+    const membership = await this.prisma.houseMembership.findUnique({
+      where: {
+        userId_houseId: {
+          userId: request.author.id,
+          houseId: request.houseId,
+        },
+      },
+      select: { status: true },
+    });
+    if (membership?.status !== HouseMembershipStatus.approved) return;
+
+    const maxId = Number(request.author.maxId);
+    if (!Number.isSafeInteger(maxId)) return;
+
+    const text = [
+      `Заявка №${requestId} в доме ${request.house.address}: ${REQUEST_STATUS_LABELS[status]}`,
+      request.title,
+      ...(comment ? [`Комментарий: ${comment}`] : []),
+    ].join('\n\n');
+    const keyboard = Keyboard.inlineKeyboard([
+      [
+        Keyboard.button.openApp(
+          'Открыть заявку',
+          this.username,
+          undefined,
+          `request_${requestId}`,
+        ),
+      ],
+    ]);
+
+    try {
+      await this.bot.api.sendMessageToUser(maxId, text, {
+        attachments: [keyboard],
+      });
+    } catch {
+      this.logger.warn(`Не доставили уведомление о заявке ${requestId}`);
+    }
   }
 
   private notifyCreated(

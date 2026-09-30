@@ -22,6 +22,7 @@ import {
   RejectJoinRequestDto,
   ReviewJoinRequestDto,
 } from './dto/review-join-request.dto';
+import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 
 @ApiTags('Debug')
 @Public()
@@ -84,5 +85,25 @@ export class DebugController {
   })
   reject(@Body() body: RejectJoinRequestDto): Promise<void> {
     return this.debug.review(body.requestId, 'rejected', body.reason);
+  }
+
+  @Post('requests/status')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'debugUpdateRequestStatus',
+    summary: 'Изменить статус заявки',
+    security: [],
+  })
+  @ApiNoContentResponse({ description: 'Статус обновлён' })
+  @ApiNotFoundResponse({
+    type: ErrorResponseDto,
+    description: 'Заявка не найдена',
+  })
+  updateRequestStatus(@Body() body: UpdateRequestStatusDto): Promise<void> {
+    return this.debug.updateRequestStatus(
+      body.requestId,
+      body.status,
+      body.comment,
+    );
   }
 }
