@@ -24,8 +24,19 @@ export class RequestApartmentDto {
 }
 
 export class RequestDto {
-  @ApiProperty({ type: 'integer', example: 148 })
-  id!: number;
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    example: 'abf319d9-b173-4aeb-b9bb-7ca6e15e6df8',
+  })
+  id!: string;
+
+  @ApiProperty({
+    type: 'integer',
+    example: 148,
+    description: 'Номер заявки для отображения',
+  })
+  number!: number;
 
   @ApiProperty({ type: 'integer', example: 1 })
   houseId!: number;
@@ -66,6 +77,13 @@ export class RequestDto {
 
   @ApiProperty({ example: true, description: 'Заявка текущего пользователя' })
   isMine!: boolean;
+
+  @ApiProperty({
+    type: 'integer',
+    example: 12,
+    description: 'Сколько жителей подписано',
+  })
+  subscribersCount!: number;
 }
 
 export class RequestEventDto {
@@ -91,6 +109,9 @@ export class RequestEventDto {
 }
 
 export class RequestDetailsResponseDto extends RequestDto {
+  @ApiProperty({ example: false, description: 'Вы подписаны на эту заявку' })
+  isSubscribed!: boolean;
+
   @ApiProperty({ example: 'После дождя вода течёт по стене у лифта' })
   description!: string;
 

@@ -1,18 +1,14 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import type { Prisma, ServiceRequest } from '@generated/prisma/client';
-import {
-  HouseMembershipStatus,
-  HouseRole,
-  RequestVisibility,
-} from '@generated/prisma/enums';
+import { HouseMembershipStatus, HouseRole } from '@generated/prisma/enums';
 
 @Injectable()
 export class RequestAccessService {
   async getAccess(
     tx: Prisma.TransactionClient,
     userId: number,
-    request: Pick<ServiceRequest, 'houseId' | 'authorId' | 'visibility'>,
+    request: Pick<ServiceRequest, 'houseId'>,
   ): Promise<{ allowed: boolean; isAdmin: boolean }> {
     const membership = await tx.houseMembership.findUnique({
       where: { userId_houseId: { userId, houseId: request.houseId } },
@@ -28,11 +24,7 @@ export class RequestAccessService {
     const isAdmin = approved && !!membership.roles.length;
     return {
       isAdmin,
-      allowed:
-        approved &&
-        (isAdmin ||
-          request.authorId === userId ||
-          request.visibility === RequestVisibility.house),
+      allowed: approved,
     };
   }
 

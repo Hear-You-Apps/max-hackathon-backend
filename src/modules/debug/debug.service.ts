@@ -24,24 +24,13 @@ export class DebugService {
   ) {}
 
   async updateRequestStatus(
-    requestId: number,
+    requestId: string,
     status: RequestStatus,
     comment?: string | null,
   ): Promise<void> {
-    const changed = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.serviceRequest.updateMany({
-        where: { id: requestId, status: { not: status } },
-        data: { status },
-      });
-      if (updated.count) {
-        await tx.requestEvent.create({
-          data: { requestId, status, comment: comment || null },
-        });
-        return true;
-      }
-
+    const changedRequestId = await this.prisma.$transaction(async (tx) => {
       const request = await tx.serviceRequest.findUnique({
-        where: { id: requestId },
+        where: { publicId: requestId },
         select: { id: true },
       });
       if (!request) {
@@ -52,10 +41,20 @@ export class DebugService {
           message: 'Заявка не найдена',
         });
       }
-      return false;
+      const updated = await tx.serviceRequest.updateMany({
+        where: { id: request.id, status: { not: status } },
+        data: { status },
+      });
+      if (updated.count) {
+        await tx.requestEvent.create({
+          data: { requestId: request.id, status, comment: comment || null },
+        });
+        return request.id;
+      }
+      return null;
     });
-    if (changed)
-      this.bot.notifyRequestStatusChanged(requestId, status, comment);
+    if (changedRequestId)
+      this.bot.notifyRequestStatusChanged(changedRequestId, status, comment);
   }
 
   async deleteUser(userId: number): Promise<void> {

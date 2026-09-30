@@ -1,4 +1,11 @@
-import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
 import {
@@ -28,12 +35,26 @@ import {
 import { RequestAccessService } from './request-access.service';
 
 @Injectable()
-export class RequestsService {
+export class RequestsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly houseAccess: HouseAccessService,
     private readonly requestAccess: RequestAccessService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    // Старая версия сервера ещё может создать заявку без UUID до выкладки нового кода
+    const requests = await this.prisma.serviceRequest.findMany({
+      where: { publicId: null },
+      select: { id: true },
+    });
+    for (const request of requests) {
+      await this.prisma.serviceRequest.updateMany({
+        where: { id: request.id, publicId: null },
+        data: { publicId: randomUUID() },
+      });
+    }
+  }
 
   async create(
     userId: number,
@@ -77,6 +98,7 @@ export class RequestsService {
 
         const request = await tx.serviceRequest.create({
           data: {
+            publicId: randomUUID(),
             houseId,
             authorId: userId,
             title: body.title,
@@ -93,7 +115,7 @@ export class RequestsService {
         if (body.attachmentIds.length) {
           const attached = await tx.storedFile.updateMany({
             where: {
-              id: { in: body.attachmentIds },
+              storageKey: { in: body.attachmentIds },
               ownerId: userId,
               houseId,
               requestId: null,
@@ -114,7 +136,7 @@ export class RequestsService {
           where: { id: request.id },
           select: requestDetailsSelect,
         });
-        return toRequestDetailsResponse(created, userId, false);
+        return toRequestDetailsResponse(created, userId, false, false);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
     );
@@ -164,21 +186,69 @@ export class RequestsService {
 
   async findOne(
     userId: number,
-    requestId: number,
+    requestId: string,
   ): Promise<RequestDetailsResponseDto> {
     return this.prisma.$transaction(
       async (tx) => {
         const request = await tx.serviceRequest.findUnique({
-          where: { id: requestId },
+          where: { publicId: requestId },
           select: requestDetailsSelect,
         });
         if (!request) throw this.requestAccess.notAvailable();
         const access = await this.requestAccess.getAccess(tx, userId, request);
         if (!access.allowed) throw this.requestAccess.notAvailable();
-        return toRequestDetailsResponse(request, userId, access.isAdmin);
+        const subscription = await tx.requestSubscription.findUnique({
+          where: { requestId_userId: { requestId: request.id, userId } },
+          select: { userId: true },
+        });
+        return toRequestDetailsResponse(
+          request,
+          userId,
+          access.isAdmin,
+          !!subscription,
+        );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
+  }
+
+  async subscribe(userId: number, requestId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const request = await tx.serviceRequest.findUnique({
+        where: { publicId: requestId },
+        select: { id: true, houseId: true, authorId: true },
+      });
+      if (!request) throw this.requestAccess.notAvailable();
+      const access = await this.requestAccess.getAccess(tx, userId, request);
+      if (!access.allowed) throw this.requestAccess.notAvailable();
+      if (request.authorId === userId) {
+        throw new ForbiddenException({
+          statusCode: HttpStatus.FORBIDDEN,
+          error: 'Forbidden',
+          code: ErrorCode.REQUEST_SUBSCRIPTION_FORBIDDEN,
+          message: 'На свою заявку подписываться не нужно',
+        });
+      }
+      await tx.requestSubscription.createMany({
+        data: [{ requestId: request.id, userId }],
+        skipDuplicates: true,
+      });
+    });
+  }
+
+  async unsubscribe(userId: number, requestId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const request = await tx.serviceRequest.findUnique({
+        where: { publicId: requestId },
+        select: { id: true, houseId: true },
+      });
+      if (!request) throw this.requestAccess.notAvailable();
+      const access = await this.requestAccess.getAccess(tx, userId, request);
+      if (!access.allowed) throw this.requestAccess.notAvailable();
+      await tx.requestSubscription.deleteMany({
+        where: { requestId: request.id, userId },
+      });
+    });
   }
 
   private invalidLocation(message: string): BadRequestException {

@@ -50,6 +50,7 @@ export class AdminHouseStatsDto {
 
 export class AdminRequestPreviewDto extends PickType(RequestDto, [
   'id',
+  'number',
   'title',
   'category',
   'status',

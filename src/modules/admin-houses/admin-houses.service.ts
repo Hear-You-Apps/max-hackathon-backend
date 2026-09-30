@@ -62,6 +62,7 @@ export class AdminHousesService {
             take: ATTENTION_LIMIT,
             select: {
               id: true,
+              publicId: true,
               title: true,
               category: true,
               status: true,
@@ -121,7 +122,11 @@ export class AdminHousesService {
           },
           attention: {
             requests: requests.map((request) => ({
-              ...request,
+              id: request.publicId!,
+              number: request.id,
+              title: request.title,
+              category: request.category,
+              status: request.status,
               createdAt: request.createdAt.toISOString(),
             })),
             joinRequests: pendingJoinRequests

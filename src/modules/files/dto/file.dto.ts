@@ -1,8 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FileDto {
-  @ApiProperty({ type: 'integer', example: 1 })
-  id!: number;
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    example: 'd4af5a13-abf9-48f2-8d09-dc62b0297139',
+  })
+  id!: string;
 
   @ApiProperty({ example: 'photo.jpg', description: 'Исходное имя файла' })
   name!: string;
@@ -18,7 +22,7 @@ export class FileDto {
   size!: number;
 
   @ApiProperty({
-    example: '/api/files/1',
+    example: '/api/files/d4af5a13-abf9-48f2-8d09-dc62b0297139',
     description: 'Скачать по урл',
   })
   url!: string;

@@ -107,14 +107,14 @@ export class FilesService {
     }
   }
 
-  async download(userId: number, fileId: number): Promise<StreamableFile> {
+  async download(userId: number, fileId: string): Promise<StreamableFile> {
     const file = await this.prisma.$transaction(
       async (tx) => {
         const stored = await tx.storedFile.findUnique({
-          where: { id: fileId },
+          where: { storageKey: fileId },
           include: {
             request: {
-              select: { houseId: true, authorId: true, visibility: true },
+              select: { houseId: true },
             },
           },
         });
@@ -150,7 +150,7 @@ export class FilesService {
     return new StreamableFile(handle.createReadStream(), {
       type: file.mimeType,
       length: file.size,
-      disposition: `attachment; filename="file-${file.id}"; filename*=UTF-8''${filename}`,
+      disposition: `attachment; filename="file-${file.storageKey}"; filename*=UTF-8''${filename}`,
     });
   }
 

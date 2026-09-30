@@ -9,12 +9,12 @@ datasource db {
 }
 
 model User {
-  id        Int     @id @default(autoincrement()) @db.UnsignedInt
-  maxId     BigInt  @unique @map("max_id")
-  firstName String  @map("first_name") @db.VarChar(255)
-  lastName  String? @map("last_name") @db.VarChar(255)
-  username  String? @db.VarChar(255)
-  photoUrl  String? @map("photo_url") @db.Text
+  id                   Int     @id @default(autoincrement()) @db.UnsignedInt
+  maxId                BigInt  @unique @map("max_id")
+  firstName            String  @map("first_name") @db.VarChar(255)
+  lastName             String? @map("last_name") @db.VarChar(255)
+  username             String? @db.VarChar(255)
+  photoUrl             String? @map("photo_url") @db.Text
   notificationsEnabled Boolean @default(false) @map("notifications_enabled")
 
   houseMemberships      HouseMembership[]
@@ -25,6 +25,7 @@ model User {
   polls                 Poll[]
   pollVotes             PollVote[]
   serviceRequests       ServiceRequest[]
+  requestSubscriptions  RequestSubscription[]
   files                 StoredFile[]
 
   @@map("users")
@@ -400,6 +401,7 @@ model MeetingParticipation {
 
 model ServiceRequest {
   id           Int                 @id @default(autoincrement()) @db.UnsignedInt
+  publicId     String?             @unique @map("public_id") @db.Char(36)
   houseId      Int                 @map("house_id") @db.UnsignedInt
   authorId     Int?                @map("author_id") @db.UnsignedInt
   title        String              @db.VarChar(255)
@@ -412,11 +414,12 @@ model ServiceRequest {
   status       RequestStatus       @default(submitted)
   createdAt    DateTime            @default(now()) @map("created_at") @db.DateTime(3)
 
-  house       House          @relation(fields: [houseId], references: [id])
-  author      User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  apartment   Apartment?     @relation(fields: [apartmentId, houseId], references: [id, houseId], onDelete: Restrict)
-  attachments StoredFile[]
-  events      RequestEvent[]
+  house         House                 @relation(fields: [houseId], references: [id])
+  author        User?                 @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  apartment     Apartment?            @relation(fields: [apartmentId, houseId], references: [id, houseId], onDelete: Restrict)
+  attachments   StoredFile[]
+  events        RequestEvent[]
+  subscriptions RequestSubscription[]
 
   @@unique([id, houseId])
   @@index([houseId, authorId, createdAt, id])
@@ -435,6 +438,19 @@ model RequestEvent {
 
   @@index([requestId, createdAt, id])
   @@map("request_events")
+}
+
+model RequestSubscription {
+  requestId Int      @map("request_id") @db.UnsignedInt
+  userId    Int      @map("user_id") @db.UnsignedInt
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, userId])
+  @@index([userId])
+  @@map("request_subscriptions")
 }
 
 model StoredFile {

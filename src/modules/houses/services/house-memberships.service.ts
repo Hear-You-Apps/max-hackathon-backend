@@ -38,6 +38,9 @@ export class HouseMembershipsService {
             lastLeftAt: new Date(),
           },
         });
+        await tx.requestSubscription.deleteMany({
+          where: { userId, request: { houseId } },
+        });
         await tx.houseJoinRequest.updateMany({
           where: { userId, houseId, status: HouseJoinRequestStatus.pending },
           data: { status: HouseJoinRequestStatus.cancelled },

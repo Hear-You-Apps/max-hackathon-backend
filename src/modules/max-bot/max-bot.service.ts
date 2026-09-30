@@ -128,28 +128,30 @@ export class MaxBotService {
       where: { id: requestId },
       select: {
         houseId: true,
+        publicId: true,
+        authorId: true,
         title: true,
         house: { select: { address: true } },
-        author: {
-          select: { id: true, maxId: true, notificationsEnabled: true },
-        },
       },
     });
-    if (!request?.author?.notificationsEnabled) return;
+    if (!request?.publicId) return;
 
-    const membership = await this.prisma.houseMembership.findUnique({
+    const recipients = await this.prisma.user.findMany({
       where: {
-        userId_houseId: {
-          userId: request.author.id,
-          houseId: request.houseId,
+        notificationsEnabled: true,
+        houseMemberships: {
+          some: {
+            houseId: request.houseId,
+            status: HouseMembershipStatus.approved,
+          },
         },
+        OR: [
+          { requestSubscriptions: { some: { requestId } } },
+          ...(request.authorId ? [{ id: request.authorId }] : []),
+        ],
       },
-      select: { status: true },
+      select: { maxId: true },
     });
-    if (membership?.status !== HouseMembershipStatus.approved) return;
-
-    const maxId = Number(request.author.maxId);
-    if (!Number.isSafeInteger(maxId)) return;
 
     const text = [
       `Заявка №${requestId} в доме ${request.house.address}: ${REQUEST_STATUS_LABELS[status]}`,
@@ -162,17 +164,32 @@ export class MaxBotService {
           'Открыть заявку',
           this.username,
           undefined,
-          `request_${requestId}`,
+          `request_${request.publicId}`,
         ),
       ],
     ]);
 
-    try {
-      await this.bot.api.sendMessageToUser(maxId, text, {
-        attachments: [keyboard],
-      });
-    } catch {
-      this.logger.warn(`Не доставили уведомление о заявке ${requestId}`);
+    let failed = 0;
+    for (const recipient of recipients) {
+      const maxId = Number(recipient.maxId);
+      if (!Number.isSafeInteger(maxId)) {
+        failed++;
+        continue;
+      }
+      try {
+        await this.bot.api.sendMessageToUser(maxId, text, {
+          attachments: [keyboard],
+        });
+      } catch {
+        failed++;
+      }
+      await setTimeout(MESSAGE_INTERVAL_MS);
+    }
+
+    if (failed) {
+      this.logger.warn(
+        `Не доставили уведомление о заявке ${requestId}: ${failed} из ${recipients.length}`,
+      );
     }
   }
 

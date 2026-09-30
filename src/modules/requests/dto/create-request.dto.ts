@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -99,7 +100,8 @@ export class CreateRequestDto {
     enum: RequestVisibility,
     enumName: 'RequestVisibility',
     default: RequestVisibility.private,
-    description: 'private: только автор и админы, house: видно соседям',
+    description:
+      'private: только по ссылке, house: в списке дома. По ссылке могут открыть подтверждённые жители',
   })
   @IsEnum(RequestVisibility, {
     message: 'Видимость должна быть private или house',
@@ -108,7 +110,7 @@ export class CreateRequestDto {
 
   @ApiPropertyOptional({
     type: 'array',
-    items: { type: 'integer', minimum: 1, maximum: MYSQL_UNSIGNED_INT_MAX },
+    items: { type: 'string', format: 'uuid' },
     default: [],
     maxItems: 5,
     uniqueItems: true,
@@ -117,11 +119,6 @@ export class CreateRequestDto {
   @IsArray({ message: 'Вложения должны быть массивом ID' })
   @ArrayMaxSize(5, { message: 'Можно прикрепить не больше 5 файлов' })
   @ArrayUnique({ message: 'Файлы не должны повторяться' })
-  @IsInt({ each: true, message: 'ID файла должен быть целым числом' })
-  @Min(1, { each: true, message: 'ID файла должен быть положительным' })
-  @Max(MYSQL_UNSIGNED_INT_MAX, {
-    each: true,
-    message: 'ID файла выходит за допустимый диапазон',
-  })
-  attachmentIds: number[] = [];
+  @IsUUID('4', { each: true, message: 'Неверный ID файла' })
+  attachmentIds: string[] = [];
 }

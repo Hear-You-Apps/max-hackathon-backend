@@ -4,6 +4,7 @@ import type { RequestDto, RequestDetailsResponseDto } from '../dto/request.dto';
 
 export const requestSelect = {
   id: true,
+  publicId: true,
   houseId: true,
   authorId: true,
   title: true,
@@ -12,6 +13,7 @@ export const requestSelect = {
   visibility: true,
   status: true,
   createdAt: true,
+  _count: { select: { subscriptions: true } },
   author: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.ServiceRequestSelect;
 
@@ -32,7 +34,8 @@ export function toRequestResponse(
   userId: number,
 ): RequestDto {
   return {
-    id: request.id,
+    id: request.publicId!,
+    number: request.id,
     houseId: request.houseId,
     title: request.title,
     category: request.category,
@@ -49,6 +52,7 @@ export function toRequestResponse(
         }
       : null,
     isMine: request.authorId === userId,
+    subscribersCount: request._count.subscriptions,
   };
 }
 
@@ -58,9 +62,11 @@ export function toRequestDetailsResponse(
   }>,
   userId: number,
   isAdmin: boolean,
+  isSubscribed: boolean,
 ): RequestDetailsResponseDto {
   return {
     ...toRequestResponse(request, userId),
+    isSubscribed,
     description: request.description,
     locationText: request.locationText,
     apartment:
