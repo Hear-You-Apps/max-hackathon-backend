@@ -37,11 +37,6 @@ export class Environment {
   @IsString()
   MAX_WEBHOOK_SECRET = '';
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  MAX_INIT_DATA_MAX_AGE = 3600;
-
   @IsString()
   @IsNotEmpty()
   DB_HOST!: string;

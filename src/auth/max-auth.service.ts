@@ -7,13 +7,11 @@ import type { MaxUserData } from './auth.types';
 @Injectable()
 export class MaxAuthService {
   private readonly secretKey: Buffer;
-  private readonly maxAge: number;
 
   constructor(config: ConfigService<Environment, true>) {
     this.secretKey = createHmac('sha256', 'WebAppData')
       .update(config.get('MAX_BOT_TOKEN', { infer: true }))
       .digest();
-    this.maxAge = config.get('MAX_INIT_DATA_MAX_AGE', { infer: true });
   }
 
   validate(initData: string): MaxUserData {
@@ -35,22 +33,6 @@ export class MaxAuthService {
 
     if (!timingSafeEqual(signature, Buffer.from(hash, 'hex'))) {
       throw new UnauthorizedException('Invalid MAX initData signature');
-    }
-
-    const rawAuthDate = params.get('auth_date') ?? '';
-    const authDate = Number(rawAuthDate);
-    const now = Math.floor(Date.now() / 1000);
-
-    if (
-      !/^\d+$/.test(rawAuthDate) ||
-      !Number.isSafeInteger(authDate) ||
-      authDate <= 0
-    ) {
-      throw new UnauthorizedException('Invalid MAX auth_date');
-    }
-
-    if (authDate > now + 30 || now - authDate > this.maxAge) {
-      throw new UnauthorizedException('Expired or invalid MAX auth_date');
     }
 
     return this.parseUser(params.get('user') ?? '');
