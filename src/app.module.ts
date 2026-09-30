@@ -7,7 +7,6 @@ import { validateEnvironment } from '@config/environment';
 import { PrismaModule } from '@prisma/prisma.module';
 import {
   HealthModule,
-  EchoModule,
   InitModule,
   UsersModule,
   HousesModule,
@@ -27,7 +26,6 @@ import { UserAccountGuard } from '@users/guards/user-account.guard';
     AuthModule,
     PrismaModule,
     HealthModule,
-    EchoModule,
     InitModule,
     UsersModule,
     HousesModule,
