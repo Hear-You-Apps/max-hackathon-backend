@@ -22,7 +22,7 @@ export class RequestsQueryDto {
     enumName: 'RequestsStatusFilter',
     default: RequestsStatusFilter.all,
     description:
-      'all: все статусы, open: кроме закрытых и отменённых, либо конкретный статус',
+      'all: все статусы, open: кроме закрытых и отменённых, completed: ждут подтверждения или закрыты, либо конкретный статус',
   })
   @IsEnum(RequestsStatusFilter, { message: 'Неверный фильтр статуса' })
   status: RequestsStatusFilter = RequestsStatusFilter.all;

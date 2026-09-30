@@ -156,15 +156,19 @@ export class RequestsService implements OnModuleInit {
             ? { authorId: userId }
             : { visibility: RequestVisibility.house }),
           ...(query.category && { category: query.category }),
-          ...(query.status === RequestsStatusFilter.all
-            ? {}
-            : {
-                status:
-                  query.status === RequestsStatusFilter.open
-                    ? { notIn: [RequestStatus.closed, RequestStatus.cancelled] }
-                    : query.status,
-              }),
         };
+        if (query.status === RequestsStatusFilter.open) {
+          where.status = {
+            notIn: [RequestStatus.closed, RequestStatus.cancelled],
+          };
+        } else if (query.status === RequestsStatusFilter.completed) {
+          where.status = {
+            in: [RequestStatus.resolved, RequestStatus.closed],
+          };
+        } else if (query.status !== RequestsStatusFilter.all) {
+          where.status = query.status;
+        }
+
         const requests = await tx.serviceRequest.findMany({
           where,
           select: requestSelect,

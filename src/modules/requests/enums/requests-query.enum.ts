@@ -8,6 +8,7 @@ export enum RequestsScope {
 export const RequestsStatusFilter = {
   all: 'all',
   open: 'open',
+  completed: 'completed',
   ...RequestStatus,
 } as const;
 
