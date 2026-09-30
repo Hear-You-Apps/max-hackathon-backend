@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put } from '@nestjs/common';
+import { Body, Controller, Param, Put } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -24,28 +24,6 @@ import { PollsService } from './polls.service';
 @Controller('polls')
 export class PollsController {
   constructor(private readonly polls: PollsService) {}
-
-  @Get(':pollId')
-  @ApiOperation({
-    operationId: 'getPoll',
-    summary: 'Получить опрос',
-    description: 'Варианты, свой ответ и результаты',
-  })
-  @ApiOkResponse({ type: PollDto })
-  @ApiBadRequestResponse({
-    type: ErrorResponseDto,
-    description: 'Неверный ID опроса',
-  })
-  @ApiNotFoundResponse({
-    type: ErrorResponseDto,
-    description: `Опрос не найден или недоступен (${ErrorCode.POLL_NOT_AVAILABLE})`,
-  })
-  findOne(
-    @User() user: UserProfileDto,
-    @Param() params: PollIdParamsDto,
-  ): Promise<PollDto> {
-    return this.polls.findOne(user.id, params.pollId);
-  }
 
   @Put(':pollId/votes')
   @ApiOperation({

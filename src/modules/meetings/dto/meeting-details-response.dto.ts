@@ -11,6 +11,9 @@ export class MeetingAuthorDto {
 }
 
 export class MeetingDetailsResponseDto extends MeetingDto {
+  @ApiProperty({ enum: ['meeting'] })
+  type!: 'meeting';
+
   @ApiProperty({
     type: MeetingParticipationResponseDto,
     nullable: true,

@@ -2,19 +2,23 @@ import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiExtraModels,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from '@common/dto/error-response.dto';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { User } from '@users/decorators/user.decorator';
 import type { UserProfileDto } from '@users/dto/user-profile.dto';
+import { PollDto } from '../polls/dto/poll.dto';
 import { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
 import { MeetingIdParamsDto } from './dto/meeting-id-params.dto';
+import { MeetingItemIdParamsDto } from './dto/meeting-item-id-params.dto';
 import { MeetingsService } from './meetings.service';
 import { MeetingVotesService } from './meeting-votes.service';
 import { MeetingParticipationService } from './meeting-participation.service';
@@ -28,6 +32,7 @@ import {
 } from './dto/meeting-votes.dto';
 
 @ApiTags('Meetings')
+@ApiExtraModels(MeetingDetailsResponseDto, PollDto)
 @ApiUnauthorizedResponse({ type: ErrorResponseDto })
 @ApiConflictResponse({
   type: ErrorResponseDto,
@@ -101,25 +106,40 @@ export class MeetingsController {
     return this.votes.update(user.id, params.meetingId, body);
   }
 
-  @Get(':meetingId')
+  @Get(':itemId')
   @ApiOperation({
-    operationId: 'getMeeting',
-    summary: 'Получение собрания',
-    description: 'Вопросы, результаты и свои голоса',
+    operationId: 'getMeetingItem',
+    summary: 'Получение собрания или опроса',
+    description:
+      'Передайте ID из списка вместе с типом: meeting_154 или poll_154',
   })
-  @ApiOkResponse({ type: MeetingDetailsResponseDto })
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(MeetingDetailsResponseDto) },
+        { $ref: getSchemaPath(PollDto) },
+      ],
+      discriminator: {
+        propertyName: 'type',
+        mapping: {
+          meeting: getSchemaPath(MeetingDetailsResponseDto),
+          poll: getSchemaPath(PollDto),
+        },
+      },
+    },
+  })
   @ApiBadRequestResponse({
     type: ErrorResponseDto,
-    description: 'Неверный ID собрания',
+    description: 'Неверный ID собрания или опроса',
   })
   @ApiNotFoundResponse({
     type: ErrorResponseDto,
-    description: `Собрание не найдено или недоступно (${ErrorCode.MEETING_NOT_AVAILABLE})`,
+    description: `Собрание или опрос не найден либо недоступен (${ErrorCode.MEETING_NOT_AVAILABLE}, ${ErrorCode.POLL_NOT_AVAILABLE})`,
   })
   findOne(
     @User() user: UserProfileDto,
-    @Param() params: MeetingIdParamsDto,
-  ): Promise<MeetingDetailsResponseDto> {
-    return this.meetings.findOne(user.id, params.meetingId);
+    @Param() params: MeetingItemIdParamsDto,
+  ): Promise<MeetingDetailsResponseDto | PollDto> {
+    return this.meetings.findItem(user.id, params.itemId);
   }
 }

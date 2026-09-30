@@ -1,10 +1,17 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MYSQL_UNSIGNED_INT_MAX } from '@common/constants/database.constants';
 import { ErrorCode } from '@common/enums/error-code.enum';
 import { Prisma } from '@generated/prisma/client';
 import { MeetingFormat } from '@generated/prisma/enums';
 import { PrismaService } from '@prisma/prisma.service';
 import { HouseAccessService } from '../houses/services/house-access.service';
 import { pollSelect, PollsService } from '../polls/polls.service';
+import type { PollDto } from '../polls/dto/poll.dto';
 import type { MeetingDetailsResponseDto } from './dto/meeting-details-response.dto';
 import type { MeetingListItemDto, MeetingQuestionDto } from './dto/meeting.dto';
 import type { MeetingsQueryDto } from './dto/meetings-query.dto';
@@ -43,6 +50,24 @@ export class MeetingsService {
     private readonly participation: MeetingParticipationService,
     private readonly polls: PollsService,
   ) {}
+
+  findItem(
+    userId: number,
+    itemId: string,
+  ): Promise<MeetingDetailsResponseDto | PollDto> {
+    const [type, rawId] = itemId.split('_');
+    const id = Number(rawId);
+    if (id > MYSQL_UNSIGNED_INT_MAX) {
+      throw new BadRequestException({
+        statusCode: HttpStatus.BAD_REQUEST,
+        error: 'Bad Request',
+        message: 'ID выходит за допустимый диапазон',
+      });
+    }
+    return type === 'meeting'
+      ? this.findOne(userId, id)
+      : this.polls.findOne(userId, id);
+  }
 
   async findAll(
     userId: number,
@@ -221,6 +246,7 @@ export class MeetingsService {
                 meeting.houseId,
               );
         return {
+          type: 'meeting' as const,
           ...toMeetingResponse(
             meeting,
             now,

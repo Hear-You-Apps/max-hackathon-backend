@@ -155,6 +155,7 @@ export class MeetingCreationService {
           },
         });
         return {
+          type: 'meeting' as const,
           ...toMeetingResponse(
             meeting,
             new Date(),
