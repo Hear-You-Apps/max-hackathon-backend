@@ -1,0 +1,3746 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/init": {
+      "post": {
+        "operationId": "init",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/InitResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Инициализация текущего пользователя",
+        "tags": ["Init"]
+      }
+    },
+    "/api/users/me/notifications": {
+      "get": {
+        "operationId": "getMyNotifications",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserNotificationsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получить настройки уведомлений",
+        "tags": ["Users"]
+      },
+      "put": {
+        "description": "Одна настройка для всех домов",
+        "operationId": "updateMyNotifications",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserNotificationsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserNotificationsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Укажите notificationsEnabled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Изменить уведомления",
+        "tags": ["Users"]
+      }
+    },
+    "/api/houses/me": {
+      "get": {
+        "operationId": "getMyHouses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MyHousesResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение своих домов и заявок на присоединение",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/search": {
+      "get": {
+        "operationId": "searchHouse",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "description": "Код приглашения",
+            "schema": {
+              "maxLength": 64,
+              "example": "LEN-24-7Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchHouseResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный формат кода приглашения",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Приглашение не найдено (INVITATION_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "410": {
+            "description": "Приглашение истекло (INVITATION_EXPIRED) или отозвано (INVITATION_REVOKED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Поиск дома по коду приглашения",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/join": {
+      "post": {
+        "operationId": "joinHouse",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JoinHouseDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyHouseJoinRequestDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверные данные заявки",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Приглашение не найдено (INVITATION_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь не инициализирован (USER_NOT_INITIALIZED), заявка уже ожидает подтверждения (JOIN_REQUEST_ALREADY_EXISTS), квартира уже привязана (APARTMENT_ALREADY_LINKED) или не определена дата предыдущего выхода (HOUSE_REJOIN_UNAVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "410": {
+            "description": "Приглашение истекло (INVITATION_EXPIRED) или отозвано (INVITATION_REVOKED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Подача заявки на присоединение к дому",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/leave": {
+      "delete": {
+        "operationId": "leaveHouse",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LeaveHouseDto" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Заявка отменена" },
+          "400": {
+            "description": "Неверный ID заявки",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена (JOIN_REQUEST_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь не инициализирован (USER_NOT_INITIALIZED) или заявка уже не ожидает подтверждения (JOIN_REQUEST_NOT_PENDING)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Отмена своей заявки на присоединение к дому",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/membership": {
+      "delete": {
+        "description": "Выход из подтверждённого дома или удаление дома после исключения. Отменяет ожидающие заявки в этот дом.",
+        "operationId": "leaveHouseMembership",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveHouseMembershipDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Пользователь вышел из дома" },
+          "400": {
+            "description": "Неверный ID дома",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не состоит в этом доме (HOUSE_MEMBERSHIP_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Выход из дома",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/{houseId}/chats": {
+      "get": {
+        "description": "Доступны только при подтверждённом членстве в доме",
+        "operationId": "getHouseChats",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseChatsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение чатов и каналов дома",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/{houseId}/events": {
+      "get": {
+        "description": "Список событий с пагинацией, включая отменённые. Для upcoming события идут по возрастанию даты начала, для all и past по убыванию. Требуется подтверждённое членство в доме.",
+        "operationId": "getHouseEvents",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Номер страницы",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Количество событий на странице",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "all: все события; upcoming: текущие и будущие; past: завершённые",
+            "schema": { "$ref": "#/components/schemas/HouseEventsPeriod" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseEventsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома, период или параметры пагинации",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение событий дома",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/houses/{houseId}": {
+      "get": {
+        "description": "Информация о доме, контакты, ссылка на оплату и ближайшие события. Требуется подтверждённое членство в доме",
+        "operationId": "getHouse",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение информации о доме",
+        "tags": ["Houses"]
+      }
+    },
+    "/api/debug/users": {
+      "delete": {
+        "operationId": "debugDeleteUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeleteUserDto" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Пользователь удалён" },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "Удаление пользователя и его связей с домами",
+        "tags": ["Debug"]
+      }
+    },
+    "/api/debug/houses/approve": {
+      "post": {
+        "operationId": "debugApproveJoinRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReviewJoinRequestDto" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Заявка одобрена, квартира привязана" },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Заявка уже рассмотрена или устарела",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "Одобрение заявки на присоединение к дому",
+        "tags": ["Debug"]
+      }
+    },
+    "/api/debug/houses/reject": {
+      "post": {
+        "operationId": "debugRejectJoinRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RejectJoinRequestDto" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Заявка отклонена" },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Заявка уже рассмотрена или устарела",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "Отклонение заявки на присоединение к дому",
+        "tags": ["Debug"]
+      }
+    },
+    "/api/debug/requests/status": {
+      "post": {
+        "operationId": "debugUpdateRequestStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequestStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Статус обновлён" },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [],
+        "summary": "Изменить статус заявки",
+        "tags": ["Debug"]
+      }
+    },
+    "/api/houses/{houseId}/meetings": {
+      "post": {
+        "description": "Можно передать один question со сроком или полную повестку. Доступно собственникам, организаторам, совету дома и админам",
+        "operationId": "createMeeting",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMeetingDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Проверьте вопрос, даты, место и число квартир для порога (INVALID_MEETING_QUESTIONS, MEETING_APARTMENTS_COUNT_REQUIRED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет права создавать собрания (MEETING_CREATE_FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Создание собрания",
+        "tags": ["Meetings"]
+      },
+      "get": {
+        "description": "Общий список для главной. Актуальные идут по дате начала, прошедшие по дате окончания. Доступно подтверждённым жителям дома",
+        "operationId": "getHouseMeetings",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "actual: текущие и будущие, past: завершённые и отменённые",
+            "schema": { "$ref": "#/components/schemas/MeetingsPeriod" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Номер страницы",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Количество собраний и опросов на странице",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MeetingsResponseDto" }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома, период или параметры пагинации",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Собрания и опросы дома",
+        "tags": ["Meetings"]
+      }
+    },
+    "/api/meetings/{meetingId}/participation": {
+      "put": {
+        "description": "Для подтверждённых жителей дома, включая нанимателей. Ответ можно менять до начала очного или очно-заочного собрания",
+        "operationId": "updateMeetingParticipation",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeetingParticipationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingParticipationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID собрания или willAttend",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Собрание не найдено или недоступно (MEETING_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Запись закрыта по сроку, формату или отмене (MEETING_PARTICIPATION_UNAVAILABLE), либо пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Приду или не приду на собрание",
+        "tags": ["Meetings"]
+      }
+    },
+    "/api/meetings/{meetingId}/votes": {
+      "put": {
+        "description": "Кто может голосовать зависит от аудитории собрания. Пока голосование открыто, можно менять ответы или сбросить все свои ответы, передав пустой votes",
+        "operationId": "updateMeetingVotes",
+        "parameters": [
+          {
+            "name": "meetingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateMeetingVotesDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingVotesResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверные ответы или вопросы другого собрания (INVALID_MEETING_QUESTIONS)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "403": {
+            "description": "Для собрания собственников нет подтверждённой квартиры (MEETING_VOTE_FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Собрание не найдено или недоступно (MEETING_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Голосование недоступно по сроку, формату или отмене (MEETING_VOTING_UNAVAILABLE), либо пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Голосование по вопросам собрания",
+        "tags": ["Meetings"]
+      }
+    },
+    "/api/meetings/{itemId}": {
+      "get": {
+        "description": "Передайте ID из списка вместе с типом: meeting_154 или poll_154",
+        "operationId": "getMeetingItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "description": "meeting_154 или poll_154",
+            "schema": {
+              "pattern": "^(meeting|poll)_[1-9][0-9]{0,9}$",
+              "example": "meeting_154",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MeetingDetailsResponseDto"
+                    },
+                    { "$ref": "#/components/schemas/PollDto" }
+                  ],
+                  "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                      "meeting": "#/components/schemas/MeetingDetailsResponseDto",
+                      "poll": "#/components/schemas/PollDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID собрания или опроса",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Собрание или опрос не найден либо недоступен (MEETING_NOT_AVAILABLE, POLL_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение собрания или опроса",
+        "tags": ["Meetings"]
+      }
+    },
+    "/api/houses/{houseId}/polls": {
+      "post": {
+        "description": "Создать опрос для жителей этого дома",
+        "operationId": "createPoll",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePollDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PollDto" }
+              }
+            }
+          },
+          "400": {
+            "description": "Проверьте вопрос, варианты ответа и срок",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Создать опрос",
+        "tags": ["Polls"]
+      }
+    },
+    "/api/polls/{pollId}/votes": {
+      "put": {
+        "description": "До конца опроса можно поменять ответ или сбросить выбор, передав пустой optionIds",
+        "operationId": "updatePollVotes",
+        "parameters": [
+          {
+            "name": "pollId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePollVotesDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PollDto" }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверные варианты ответа (INVALID_POLL_OPTIONS)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "403": {
+            "description": "Этот опрос доступен другой группе жителей (POLL_VOTE_FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Опрос не найден или недоступен (POLL_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Опрос закончился (POLL_VOTING_UNAVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Ответить на опрос",
+        "tags": ["Polls"]
+      }
+    },
+    "/api/requests/{requestId}": {
+      "get": {
+        "description": "Описание, вложения и история обработки. По ссылке заявку видят подтверждённые жители дома",
+        "operationId": "getRequest",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID заявки",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена или недоступна (REQUEST_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение заявки",
+        "tags": ["Requests"]
+      }
+    },
+    "/api/requests/{requestId}/subscription": {
+      "put": {
+        "description": "Для жителей этого дома, кроме автора заявки",
+        "operationId": "subscribeToRequest",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Подписка включена" },
+          "400": {
+            "description": "Неверный ID заявки",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "403": {
+            "description": "На свою заявку подписаться нельзя (REQUEST_SUBSCRIPTION_FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена или недоступна (REQUEST_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Подписаться на заявку",
+        "tags": ["Requests"]
+      },
+      "delete": {
+        "operationId": "unsubscribeFromRequest",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Подписка выключена" },
+          "400": {
+            "description": "Неверный ID заявки",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Заявка не найдена или недоступна (REQUEST_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Отписаться от заявки",
+        "tags": ["Requests"]
+      }
+    },
+    "/api/houses/{houseId}/requests": {
+      "get": {
+        "description": "Свои или открытые соседям заявки, новые сверху. Доступно подтверждённым жителям",
+        "operationId": "getHouseRequests",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "mine: свои заявки, house: открытые соседям",
+            "schema": { "$ref": "#/components/schemas/RequestsScope" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "all: все статусы, open: кроме закрытых и отменённых, completed: ждут подтверждения или закрыты, либо конкретный статус",
+            "schema": { "$ref": "#/components/schemas/RequestsStatusFilter" }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/RequestCategory" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RequestsResponseDto" }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома или фильтры",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение заявок дома",
+        "tags": ["Requests"]
+      },
+      "post": {
+        "description": "Для подтверждённых жителей дома. Файлы сначала загрузите через POST /houses/:houseId/files",
+        "operationId": "createRequest",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRequestDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверные поля, место (INVALID_REQUEST_LOCATION), квартира (REQUEST_APARTMENT_NOT_AVAILABLE) или вложения (REQUEST_ATTACHMENTS_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Создание заявки",
+        "tags": ["Requests"]
+      }
+    },
+    "/api/files/{fileId}": {
+      "get": {
+        "description": "Проверяется доступ к дому и заявке. Для просмотра изображения загрузите его с Authorization и создайте blob URL",
+        "operationId": "getFile",
+        "parameters": [
+          {
+            "name": "fileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "example": "d4af5a13-abf9-48f2-8d09-dc62b0297139",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": { "type": "string", "format": "binary" }
+              },
+              "image/png": {
+                "schema": { "type": "string", "format": "binary" }
+              },
+              "image/webp": {
+                "schema": { "type": "string", "format": "binary" }
+              },
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "description": "Неверный ID файла",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Файл не найден или недоступен (FILE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Получение файла",
+        "tags": ["Files"]
+      }
+    },
+    "/api/houses/{houseId}/files": {
+      "post": {
+        "description": "JPEG, PNG, WebP или PDF до 10 МБ. До привязки к заявке файл доступен только загрузившему его жителю",
+        "operationId": "uploadHouseFile",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileDto" }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома, файл или формат запроса (INVALID_FILE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "413": {
+            "description": "Файл больше 10 МБ",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Загрузка файла для заявки",
+        "tags": ["Files"]
+      }
+    },
+    "/api/admin/houses/{houseId}/overview": {
+      "get": {
+        "description": "Счётчики и заявки требующие внимания. Доступно только подтверждённому администратору этого дома",
+        "operationId": "getAdminHouseOverview",
+        "parameters": [
+          {
+            "name": "houseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4294967295,
+              "example": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHouseOverviewResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный ID дома",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет прав администратора дома (HOUSE_ADMIN_REQUIRED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "404": {
+            "description": "Дом не найден или недоступен (HOUSE_NOT_AVAILABLE)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь ещё не инициализирован (USER_NOT_INITIALIZED)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponseDto" }
+              }
+            }
+          }
+        },
+        "summary": "Обзор дома для администратора",
+        "tags": ["Admin houses"]
+      }
+    }
+  },
+  "info": {
+    "title": "Max Hackathon API",
+    "description": "HTTP API for Max Hackathon",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "max": {
+        "scheme": "bearer",
+        "bearerFormat": "MAX initData",
+        "type": "http",
+        "description": "window.WebApp.initData without additional encoding"
+      }
+    },
+    "schemas": {
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "USER_NOT_INITIALIZED",
+          "USER_NOT_FOUND",
+          "INVITATION_NOT_FOUND",
+          "INVITATION_EXPIRED",
+          "INVITATION_REVOKED",
+          "JOIN_REQUEST_ALREADY_EXISTS",
+          "JOIN_REQUEST_NOT_FOUND",
+          "JOIN_REQUEST_NOT_PENDING",
+          "JOIN_REQUEST_OUTDATED",
+          "APARTMENT_ALREADY_LINKED",
+          "HOUSE_REJOIN_UNAVAILABLE",
+          "HOUSE_MEMBERSHIP_NOT_FOUND",
+          "HOUSE_NOT_AVAILABLE",
+          "HOUSE_ADMIN_REQUIRED",
+          "MEETING_NOT_AVAILABLE",
+          "MEETING_CREATE_FORBIDDEN",
+          "INVALID_MEETING_DATES",
+          "MEETING_LOCATION_REQUIRED",
+          "MEETING_APARTMENTS_COUNT_REQUIRED",
+          "MEETING_VOTE_FORBIDDEN",
+          "MEETING_VOTING_UNAVAILABLE",
+          "INVALID_MEETING_QUESTIONS",
+          "MEETING_PARTICIPATION_UNAVAILABLE",
+          "INVALID_POLL_DATE",
+          "INVALID_POLL_OPTIONS",
+          "POLL_NOT_AVAILABLE",
+          "POLL_VOTE_FORBIDDEN",
+          "POLL_VOTING_UNAVAILABLE",
+          "REQUEST_NOT_AVAILABLE",
+          "REQUEST_SUBSCRIPTION_FORBIDDEN",
+          "INVALID_REQUEST_LOCATION",
+          "REQUEST_APARTMENT_NOT_AVAILABLE",
+          "REQUEST_ATTACHMENTS_NOT_AVAILABLE",
+          "FILE_NOT_AVAILABLE",
+          "INVALID_FILE",
+          "BOT_WEBHOOK_UNAUTHORIZED",
+          "BOT_WEBHOOK_NOT_CONFIGURED",
+          "BOT_MESSAGE_FAILED"
+        ]
+      },
+      "ErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "number", "example": 400 },
+          "message": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "example": ["message must be a string"]
+          },
+          "error": { "type": "string", "example": "Bad Request" },
+          "code": {
+            "example": "USER_NOT_INITIALIZED",
+            "allOf": [{ "$ref": "#/components/schemas/ErrorCode" }]
+          }
+        },
+        "required": ["statusCode", "message", "error"]
+      },
+      "HouseMembershipStatus": {
+        "type": "string",
+        "enum": ["approved", "revoked", "left"]
+      },
+      "HouseRole": {
+        "type": "string",
+        "enum": ["resident", "organizer", "house_council", "house_admin"]
+      },
+      "ApartmentRelationship": {
+        "type": "string",
+        "enum": ["owner", "tenant"]
+      },
+      "ApartmentVerificationStatus": {
+        "type": "string",
+        "enum": ["pending", "verified", "rejected"]
+      },
+      "MyApartmentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 105 },
+          "number": { "type": "string", "example": "112" },
+          "relationship": {
+            "allOf": [{ "$ref": "#/components/schemas/ApartmentRelationship" }]
+          },
+          "verificationStatus": {
+            "allOf": [
+              { "$ref": "#/components/schemas/ApartmentVerificationStatus" }
+            ]
+          }
+        },
+        "required": ["id", "number", "relationship", "verificationStatus"]
+      },
+      "MyHouseMembershipDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 1 },
+          "status": {
+            "allOf": [{ "$ref": "#/components/schemas/HouseMembershipStatus" }]
+          },
+          "revocationReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Причина отзыва доступа к дому"
+          },
+          "displayName": { "type": "string", "example": "Александр Кузнецов" },
+          "roles": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HouseRole" }
+          },
+          "apartments": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyApartmentDto" }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "revocationReason",
+          "displayName",
+          "roles",
+          "apartments"
+        ]
+      },
+      "MyHouseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 10 },
+          "address": { "type": "string", "example": "ул. Ленина, 24" },
+          "managementCompanyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Жилсервис"
+          },
+          "apartmentsCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 412
+          },
+          "entrancesCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 6
+          },
+          "residentsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 286,
+            "description": "Количество подтверждённых жителей дома"
+          },
+          "adminContactUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ссылка для связи с администратором дома. Доступна при подтверждённом членстве."
+          },
+          "membership": { "$ref": "#/components/schemas/MyHouseMembershipDto" }
+        },
+        "required": [
+          "id",
+          "address",
+          "managementCompanyName",
+          "apartmentsCount",
+          "entrancesCount",
+          "residentsCount",
+          "adminContactUrl",
+          "membership"
+        ]
+      },
+      "HousePreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 10 },
+          "address": { "type": "string", "example": "ул. Ленина, 24" },
+          "managementCompanyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Жилсервис"
+          },
+          "apartmentsCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 412
+          },
+          "entrancesCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 6
+          },
+          "residentsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 286,
+            "description": "Количество подтверждённых жителей дома"
+          }
+        },
+        "required": [
+          "id",
+          "address",
+          "managementCompanyName",
+          "apartmentsCount",
+          "entrancesCount",
+          "residentsCount"
+        ]
+      },
+      "HouseJoinRequestStatus": {
+        "type": "string",
+        "enum": ["pending", "approved", "rejected", "cancelled"]
+      },
+      "MyHouseJoinRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 25 },
+          "house": { "$ref": "#/components/schemas/HousePreviewDto" },
+          "apartmentNumber": { "type": "string", "example": "112" },
+          "displayName": { "type": "string", "example": "Александр Кузнецов" },
+          "relationship": {
+            "allOf": [{ "$ref": "#/components/schemas/ApartmentRelationship" }]
+          },
+          "status": {
+            "allOf": [{ "$ref": "#/components/schemas/HouseJoinRequestStatus" }]
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "house",
+          "apartmentNumber",
+          "displayName",
+          "relationship",
+          "status",
+          "rejectionReason"
+        ]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 1 },
+          "firstName": { "type": "string", "example": "Иван" },
+          "lastName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Иванов"
+          },
+          "username": { "type": "string", "nullable": true, "example": null },
+          "photoUrl": { "type": "string", "nullable": true, "example": null },
+          "notificationsEnabled": {
+            "type": "boolean",
+            "description": "Уведомления о собраниях и заявках во всех домах"
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "username",
+          "photoUrl",
+          "notificationsEnabled"
+        ]
+      },
+      "InitResponseDto": {
+        "type": "object",
+        "properties": {
+          "houses": {
+            "description": "Дома с подтверждённым или отозванным доступом. Покинутые дома не возвращаются.",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyHouseDto" }
+          },
+          "joinRequests": {
+            "description": "Последние заявки по каждой квартире, ожидающие подтверждения или отклонённые. Заявки до последнего выхода из дома не возвращаются.",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyHouseJoinRequestDto" }
+          },
+          "user": { "$ref": "#/components/schemas/UserProfileDto" }
+        },
+        "required": ["houses", "joinRequests", "user"]
+      },
+      "UserNotificationsDto": {
+        "type": "object",
+        "properties": {
+          "notificationsEnabled": {
+            "type": "boolean",
+            "description": "Уведомления о собраниях и заявках во всех домах"
+          }
+        },
+        "required": ["notificationsEnabled"]
+      },
+      "MyHousesResponseDto": {
+        "type": "object",
+        "properties": {
+          "houses": {
+            "description": "Дома с подтверждённым или отозванным доступом. Покинутые дома не возвращаются.",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyHouseDto" }
+          },
+          "joinRequests": {
+            "description": "Последние заявки по каждой квартире, ожидающие подтверждения или отклонённые. Заявки до последнего выхода из дома не возвращаются.",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MyHouseJoinRequestDto" }
+          }
+        },
+        "required": ["houses", "joinRequests"]
+      },
+      "FoundHouseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 10 },
+          "address": { "type": "string", "example": "ул. Ленина, 24" },
+          "managementCompanyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Жилсервис"
+          },
+          "apartmentsCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 412
+          },
+          "entrancesCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 6
+          },
+          "residentsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 286,
+            "description": "Количество подтверждённых жителей дома"
+          }
+        },
+        "required": [
+          "id",
+          "address",
+          "managementCompanyName",
+          "apartmentsCount",
+          "entrancesCount",
+          "residentsCount"
+        ]
+      },
+      "SearchHouseResponseDto": {
+        "type": "object",
+        "properties": {
+          "house": { "$ref": "#/components/schemas/FoundHouseDto" },
+          "membership": {
+            "nullable": true,
+            "description": "Связь текущего пользователя с домом. При отсутствии связи или после выхода возвращается null.",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/MyHouseMembershipDto" }]
+          },
+          "joinRequest": {
+            "nullable": true,
+            "description": "Последняя актуальная заявка текущего пользователя в этот дом либо null. Полный список доступен в /houses/me.",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/MyHouseJoinRequestDto" }]
+          }
+        },
+        "required": ["house", "membership", "joinRequest"]
+      },
+      "JoinHouseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "LEN-24-7Q",
+            "description": "Код приглашения",
+            "maxLength": 64
+          },
+          "apartmentNumber": {
+            "type": "string",
+            "example": "112",
+            "maxLength": 32
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Александр Кузнецов",
+            "maxLength": 255
+          },
+          "relationship": {
+            "allOf": [{ "$ref": "#/components/schemas/ApartmentRelationship" }]
+          },
+          "notificationsEnabled": {
+            "type": "boolean",
+            "description": "Если передано, обновляет уведомления во всех домах"
+          }
+        },
+        "required": ["code", "apartmentNumber", "displayName", "relationship"]
+      },
+      "LeaveHouseDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "integer",
+            "example": 25,
+            "minimum": 1,
+            "maximum": 4294967295
+          }
+        },
+        "required": ["requestId"]
+      },
+      "LeaveHouseMembershipDto": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "integer",
+            "example": 1,
+            "minimum": 1,
+            "maximum": 4294967295
+          }
+        },
+        "required": ["houseId"]
+      },
+      "HouseChatType": {
+        "type": "string",
+        "enum": ["chat", "channel"],
+        "description": "chat: чат, channel: канал"
+      },
+      "HouseChatDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1, "description": "ID записи" },
+          "type": {
+            "description": "chat: чат, channel: канал",
+            "allOf": [{ "$ref": "#/components/schemas/HouseChatType" }]
+          },
+          "name": {
+            "type": "string",
+            "example": "Общий чат дома",
+            "description": "Название"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Описание"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Ссылка для открытия в MAX"
+          }
+        },
+        "required": ["id", "type", "name", "description", "url"]
+      },
+      "HouseChatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Чаты и каналы дома",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HouseChatDto" }
+          }
+        },
+        "required": ["items"]
+      },
+      "HouseEventsPeriod": {
+        "type": "string",
+        "enum": ["all", "upcoming", "past"]
+      },
+      "HouseEventType": {
+        "type": "string",
+        "enum": [
+          "water_outage",
+          "power_outage",
+          "cleaning",
+          "maintenance",
+          "other"
+        ]
+      },
+      "HouseEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 1 },
+          "type": {
+            "allOf": [{ "$ref": "#/components/schemas/HouseEventType" }]
+          },
+          "title": { "type": "string", "example": "Отключение горячей воды" },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Плановые работы"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T07:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-10-01T13:00:00.000Z"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "example": "Подъезды 1–3"
+          },
+          "isCancelled": { "type": "boolean", "example": false }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "startsAt",
+          "endsAt",
+          "location",
+          "isCancelled"
+        ]
+      },
+      "HouseEventsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "События текущей страницы",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HouseEventDto" }
+          },
+          "page": {
+            "type": "integer",
+            "example": 1,
+            "description": "Номер страницы"
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20,
+            "description": "Размер страницы"
+          },
+          "total": {
+            "type": "integer",
+            "example": 42,
+            "description": "Общее количество событий дома с учётом выбранного периода"
+          }
+        },
+        "required": ["items", "page", "limit", "total"]
+      },
+      "HouseInfoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 10 },
+          "address": { "type": "string", "example": "ул. Ленина, 24" },
+          "managementCompanyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Жилсервис"
+          },
+          "apartmentsCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 412
+          },
+          "entrancesCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 6
+          },
+          "residentsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 286,
+            "description": "Количество подтверждённых жителей дома"
+          },
+          "adminContactUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ссылка для связи с администратором дома. Доступна при подтверждённом членстве."
+          },
+          "yearBuilt": { "type": "number", "nullable": true, "example": 1998 }
+        },
+        "required": [
+          "id",
+          "address",
+          "managementCompanyName",
+          "apartmentsCount",
+          "entrancesCount",
+          "residentsCount",
+          "adminContactUrl",
+          "yearBuilt"
+        ]
+      },
+      "HouseContactType": {
+        "type": "string",
+        "enum": [
+          "dispatcher",
+          "emergency",
+          "plumber",
+          "electrician",
+          "representative",
+          "passport_office",
+          "other"
+        ]
+      },
+      "HouseContactDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "example": 1 },
+          "type": {
+            "allOf": [{ "$ref": "#/components/schemas/HouseContactType" }]
+          },
+          "name": { "type": "string", "example": "Диспетчерская УК" },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+78120000000"
+          },
+          "address": { "type": "string", "nullable": true },
+          "workingHours": {
+            "type": "string",
+            "nullable": true,
+            "example": "Круглосуточно"
+          },
+          "messengerUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "phone",
+          "address",
+          "workingHours",
+          "messengerUrl"
+        ]
+      },
+      "HouseUtilitiesDto": {
+        "type": "object",
+        "properties": {
+          "paymentUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "Общая ссылка на оплату или личный кабинет поставщика"
+          }
+        },
+        "required": ["paymentUrl"]
+      },
+      "HouseDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "house": { "$ref": "#/components/schemas/HouseInfoDto" },
+          "contacts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HouseContactDto" }
+          },
+          "utilities": { "$ref": "#/components/schemas/HouseUtilitiesDto" },
+          "upcomingEvents": {
+            "maxItems": 3,
+            "description": "До трёх текущих и ближайших событий по дате начала",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HouseEventDto" }
+          }
+        },
+        "required": ["house", "contacts", "utilities", "upcomingEvents"]
+      },
+      "DeleteUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "description": "ID пользователя в нашей БД",
+            "example": 1,
+            "minimum": 1,
+            "maximum": 4294967295
+          }
+        },
+        "required": ["userId"]
+      },
+      "ReviewJoinRequestDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "integer",
+            "example": 25,
+            "minimum": 1,
+            "maximum": 4294967295
+          }
+        },
+        "required": ["requestId"]
+      },
+      "RejectJoinRequestDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "integer",
+            "example": 25,
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "reason": {
+            "type": "string",
+            "example": "Неверно указан номер квартиры",
+            "maxLength": 2000
+          }
+        },
+        "required": ["requestId", "reason"]
+      },
+      "RequestStatus": {
+        "type": "string",
+        "enum": [
+          "submitted",
+          "in_review",
+          "in_progress",
+          "resolved",
+          "closed",
+          "cancelled"
+        ]
+      },
+      "UpdateRequestStatusDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8"
+          },
+          "status": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestStatus" }]
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "example": "Бригада выедет завтра"
+          }
+        },
+        "required": ["requestId", "status"]
+      },
+      "MeetingFormat": {
+        "type": "string",
+        "enum": ["in_person", "absentee", "mixed"],
+        "description": "in_person: очная, absentee: заочная, mixed: очно-заочная"
+      },
+      "VotingAudience": {
+        "type": "string",
+        "enum": ["all_residents", "owners"],
+        "description": "all_residents: все жители, owners: только собственники"
+      },
+      "CreateMeetingQuestionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Установить шлагбаум во дворе?",
+            "maxLength": 2000
+          }
+        },
+        "required": ["title"]
+      },
+      "CreateMeetingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Установка шлагбаума во дворе",
+            "maxLength": 255,
+            "description": "Название собрания, если вопросов несколько"
+          },
+          "question": {
+            "type": "string",
+            "example": "Установить шлагбаум во дворе?",
+            "maxLength": 2000,
+            "description": "Один вопрос для простого собрания, вместо questions"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Обсудим въезд во двор и стоимость установки",
+            "maxLength": 10000
+          },
+          "format": {
+            "description": "in_person: очная, absentee: заочная, mixed: очно-заочная",
+            "default": "absentee",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingFormat" }]
+          },
+          "audience": {
+            "default": "owners",
+            "description": "all_residents: все жители, owners: только собственники",
+            "allOf": [{ "$ref": "#/components/schemas/VotingAudience" }]
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "example": "У второго подъезда",
+            "description": "Место обязательно для очного и очно-заочного собрания"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T16:00:00.000Z",
+            "description": "Начало собрания, если нужно запланировать его на будущее"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-07T20:59:00.000Z",
+            "description": "Окончание собрания с часовым поясом, позже начала"
+          },
+          "questions": {
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "Вопросы повестки, вместо одного question",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CreateMeetingQuestionDto" }
+          },
+          "participationThresholdPercent": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 100,
+            "example": 50,
+            "description": "Порог участия от числа квартир, null если не нужен"
+          }
+        },
+        "required": ["endsAt"]
+      },
+      "MeetingStatus": {
+        "type": "string",
+        "enum": ["scheduled", "active", "closed", "cancelled"],
+        "description": "scheduled: ещё не началось, active: идёт, closed: завершено, cancelled: отменено"
+      },
+      "MeetingParticipationResponseDto": {
+        "type": "object",
+        "properties": {
+          "willAttend": {
+            "type": "boolean",
+            "nullable": true,
+            "example": true,
+            "description": "Свой ответ, null если ещё не отмечались"
+          },
+          "goingCount": {
+            "type": "integer",
+            "example": 12,
+            "description": "Сколько подтверждённых жителей планируют прийти"
+          }
+        },
+        "required": ["willAttend", "goingCount"]
+      },
+      "MeetingAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": {
+            "type": "string",
+            "example": "Олег Чикелев",
+            "description": "Имя автора"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "MeetingVoteChoice": {
+        "type": "string",
+        "enum": ["yes", "no", "abstain"],
+        "description": "Свой голос по вопросу, null если ещё не голосовали"
+      },
+      "MeetingVoteResultsDto": {
+        "type": "object",
+        "properties": {
+          "yes": {
+            "type": "integer",
+            "example": 42,
+            "description": "Голоса за"
+          },
+          "no": {
+            "type": "integer",
+            "example": 8,
+            "description": "Голоса против"
+          },
+          "abstain": {
+            "type": "integer",
+            "example": 3,
+            "description": "Воздержались"
+          }
+        },
+        "required": ["yes", "no", "abstain"]
+      },
+      "MeetingQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": {
+            "type": "string",
+            "example": "Установить шлагбаум во дворе?"
+          },
+          "myVote": {
+            "nullable": true,
+            "description": "Свой голос по вопросу, null если ещё не голосовали",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingVoteChoice" }]
+          },
+          "results": {
+            "description": "Текущие результаты",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingVoteResultsDto" }]
+          }
+        },
+        "required": ["id", "title", "myVote", "results"]
+      },
+      "MeetingDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "houseId": {
+            "type": "integer",
+            "example": 1,
+            "description": "ID дома"
+          },
+          "title": {
+            "type": "string",
+            "example": "Установка шлагбаума во дворе"
+          },
+          "format": {
+            "description": "in_person: очная, absentee: заочная, mixed: очно-заочная",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingFormat" }]
+          },
+          "audience": {
+            "allOf": [{ "$ref": "#/components/schemas/VotingAudience" }]
+          },
+          "status": {
+            "description": "scheduled: ещё не началось, active: идёт, closed: завершено, cancelled: отменено",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingStatus" }]
+          },
+          "resultsFinal": {
+            "type": "boolean",
+            "description": "Голосование закончено, результаты больше не меняются от новых голосов"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "example": "У второго подъезда"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T16:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-07T20:59:00.000Z"
+          },
+          "participantsCount": {
+            "type": "integer",
+            "example": 53,
+            "description": "Пользователи, ответившие хотя бы на один вопрос. Каждый считается один раз"
+          },
+          "participationThresholdPercent": {
+            "type": "integer",
+            "nullable": true,
+            "example": 50,
+            "description": "Порог участия от числа квартир, null если не задан"
+          },
+          "apartmentsCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 412,
+            "description": "Количество квартир дома, null если не указано"
+          },
+          "participatingApartmentsCount": {
+            "type": "integer",
+            "example": 213,
+            "description": "Квартиры, от которых голосовали или отметили «Приду»"
+          },
+          "participationThresholdReached": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null если порог участия не задан или число квартир неизвестно"
+          },
+          "type": { "type": "string", "enum": ["meeting"] },
+          "participation": {
+            "nullable": true,
+            "description": "Свой ответ и число планирующих прийти, null для заочного собрания",
+            "type": "object",
+            "allOf": [
+              { "$ref": "#/components/schemas/MeetingParticipationResponseDto" }
+            ]
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Обсудим въезд во двор и стоимость установки"
+          },
+          "author": {
+            "nullable": true,
+            "description": "Автор собрания, null если аккаунт удалён",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingAuthorDto" }]
+          },
+          "questions": {
+            "description": "Вопросы в порядке повестки",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MeetingQuestionDto" }
+          }
+        },
+        "required": [
+          "id",
+          "houseId",
+          "title",
+          "format",
+          "audience",
+          "status",
+          "resultsFinal",
+          "location",
+          "startsAt",
+          "endsAt",
+          "participantsCount",
+          "participationThresholdPercent",
+          "apartmentsCount",
+          "participatingApartmentsCount",
+          "participationThresholdReached",
+          "type",
+          "participation",
+          "description",
+          "author",
+          "questions"
+        ]
+      },
+      "MeetingsPeriod": { "type": "string", "enum": ["actual", "past"] },
+      "MeetingListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "houseId": {
+            "type": "integer",
+            "example": 1,
+            "description": "ID дома"
+          },
+          "title": {
+            "type": "string",
+            "example": "Установка шлагбаума во дворе"
+          },
+          "format": {
+            "description": "in_person: очная, absentee: заочная, mixed: очно-заочная",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingFormat" }]
+          },
+          "audience": {
+            "allOf": [{ "$ref": "#/components/schemas/VotingAudience" }]
+          },
+          "status": {
+            "description": "scheduled: ещё не началось, active: идёт, closed: завершено, cancelled: отменено",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingStatus" }]
+          },
+          "resultsFinal": {
+            "type": "boolean",
+            "description": "Голосование закончено, результаты больше не меняются от новых голосов"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "example": "У второго подъезда"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T16:00:00.000Z"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-07T20:59:00.000Z"
+          },
+          "participantsCount": {
+            "type": "integer",
+            "example": 53,
+            "description": "Пользователи, ответившие хотя бы на один вопрос. Каждый считается один раз"
+          },
+          "participationThresholdPercent": {
+            "type": "integer",
+            "nullable": true,
+            "example": 50,
+            "description": "Порог участия от числа квартир, null если не задан"
+          },
+          "apartmentsCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 412,
+            "description": "Количество квартир дома, null если не указано"
+          },
+          "participatingApartmentsCount": {
+            "type": "integer",
+            "example": 213,
+            "description": "Квартиры, от которых голосовали или отметили «Приду»"
+          },
+          "participationThresholdReached": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "null если порог участия не задан или число квартир неизвестно"
+          },
+          "type": { "type": "string", "enum": ["meeting"] },
+          "questionsCount": {
+            "type": "integer",
+            "example": 3,
+            "description": "Количество вопросов"
+          },
+          "firstQuestion": {
+            "nullable": true,
+            "description": "Первый вопрос для карточки в списке, null если вопросов нет",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingQuestionDto" }]
+          }
+        },
+        "required": [
+          "id",
+          "houseId",
+          "title",
+          "format",
+          "audience",
+          "status",
+          "resultsFinal",
+          "location",
+          "startsAt",
+          "endsAt",
+          "participantsCount",
+          "participationThresholdPercent",
+          "apartmentsCount",
+          "participatingApartmentsCount",
+          "participationThresholdReached",
+          "type",
+          "questionsCount",
+          "firstQuestion"
+        ]
+      },
+      "PollOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "Светло-серый" },
+          "votesCount": {
+            "type": "integer",
+            "description": "Сколько жителей выбрали вариант"
+          },
+          "percent": {
+            "type": "integer",
+            "description": "Процент ответивших. При выборе нескольких вариантов сумма может быть больше 100"
+          }
+        },
+        "required": ["id", "title", "votesCount", "percent"]
+      },
+      "PollDto": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["poll"] },
+          "id": { "type": "integer", "example": 1 },
+          "houseId": { "type": "integer", "example": 1 },
+          "question": {
+            "type": "string",
+            "example": "Какой цвет покрасить стены в подъездах?"
+          },
+          "audience": {
+            "allOf": [{ "$ref": "#/components/schemas/VotingAudience" }]
+          },
+          "allowMultiple": { "type": "boolean" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed"],
+            "description": "По сроку опроса"
+          },
+          "resultsFinal": {
+            "type": "boolean",
+            "description": "Результат окончательный после срока опроса"
+          },
+          "responsesCount": {
+            "type": "integer",
+            "description": "Сколько жителей ответили на опрос"
+          },
+          "myOptionIds": {
+            "description": "Выбранные мной варианты",
+            "type": "array",
+            "items": { "type": "number" }
+          },
+          "options": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PollOptionDto" }
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "houseId",
+          "question",
+          "audience",
+          "allowMultiple",
+          "endsAt",
+          "status",
+          "resultsFinal",
+          "responsesCount",
+          "myOptionIds",
+          "options"
+        ]
+      },
+      "MeetingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "$ref": "#/components/schemas/MeetingListItemDto" },
+                { "$ref": "#/components/schemas/PollDto" }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "meeting": "#/components/schemas/MeetingListItemDto",
+                  "poll": "#/components/schemas/PollDto"
+                }
+              }
+            },
+            "description": "Собрания и опросы текущей страницы"
+          },
+          "page": {
+            "type": "integer",
+            "example": 1,
+            "description": "Номер страницы"
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20,
+            "description": "Размер страницы"
+          },
+          "total": {
+            "type": "integer",
+            "example": 42,
+            "description": "Количество собраний и опросов за выбранный период"
+          }
+        },
+        "required": ["items", "page", "limit", "total"]
+      },
+      "UpdateMeetingParticipationDto": {
+        "type": "object",
+        "properties": {
+          "willAttend": {
+            "type": "boolean",
+            "description": "true: приду, false: не приду",
+            "example": true
+          }
+        },
+        "required": ["willAttend"]
+      },
+      "MeetingVoteDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "integer",
+            "example": 1,
+            "minimum": 1,
+            "maximum": 4294967295,
+            "description": "ID вопроса"
+          },
+          "choice": {
+            "example": "yes",
+            "description": "yes: за, no: против, abstain: воздержался",
+            "allOf": [{ "$ref": "#/components/schemas/MeetingVoteChoice" }]
+          }
+        },
+        "required": ["questionId", "choice"]
+      },
+      "UpdateMeetingVotesDto": {
+        "type": "object",
+        "properties": {
+          "votes": {
+            "minItems": 0,
+            "maxItems": 100,
+            "description": "Ответы без повторяющихся questionId. Меняются только переданные ответы, пустой массив сбрасывает все свои ответы",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MeetingVoteDto" }
+          }
+        },
+        "required": ["votes"]
+      },
+      "MeetingVotesResponseDto": {
+        "type": "object",
+        "properties": {
+          "votes": {
+            "description": "Все свои ответы по собранию в порядке повестки",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MeetingVoteDto" }
+          }
+        },
+        "required": ["votes"]
+      },
+      "CreatePollOptionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Светло-серый",
+            "maxLength": 255
+          }
+        },
+        "required": ["title"]
+      },
+      "CreatePollDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "example": "Какой цвет покрасить стены в подъездах?"
+          },
+          "options": {
+            "minItems": 2,
+            "maxItems": 20,
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CreatePollOptionDto" }
+          },
+          "allowMultiple": { "type": "boolean", "example": false },
+          "audience": {
+            "description": "all_residents: все жители, owners: только собственники",
+            "allOf": [{ "$ref": "#/components/schemas/VotingAudience" }]
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-07T20:59:00.000Z",
+            "description": "Срок окончания с часовым поясом"
+          }
+        },
+        "required": [
+          "question",
+          "options",
+          "allowMultiple",
+          "audience",
+          "endsAt"
+        ]
+      },
+      "UpdatePollVotesDto": {
+        "type": "object",
+        "properties": {
+          "optionIds": {
+            "minItems": 0,
+            "maxItems": 20,
+            "description": "ID выбранных вариантов. Повторная отправка меняет ответ, пустой массив сбрасывает выбор",
+            "example": [1, 3],
+            "type": "array",
+            "items": { "type": "number" }
+          }
+        },
+        "required": ["optionIds"]
+      },
+      "RequestCategory": {
+        "type": "string",
+        "enum": ["management", "electrician", "plumber", "duty"]
+      },
+      "RequestLocationType": {
+        "type": "string",
+        "enum": ["apartment", "entrance", "yard"]
+      },
+      "RequestVisibility": { "type": "string", "enum": ["private", "house"] },
+      "RequestAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Олег Чикелев" }
+        },
+        "required": ["id", "name"]
+      },
+      "RequestApartmentDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "number": { "type": "string", "example": "112" }
+        },
+        "required": ["id", "number"]
+      },
+      "FileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d4af5a13-abf9-48f2-8d09-dc62b0297139"
+          },
+          "name": {
+            "type": "string",
+            "example": "photo.jpg",
+            "description": "Исходное имя файла"
+          },
+          "mimeType": { "type": "string", "example": "image/jpeg" },
+          "size": {
+            "type": "integer",
+            "example": 245760,
+            "description": "Размер в байтах"
+          },
+          "url": {
+            "type": "string",
+            "example": "/api/files/d4af5a13-abf9-48f2-8d09-dc62b0297139",
+            "description": "Скачать по урл"
+          }
+        },
+        "required": ["id", "name", "mimeType", "size", "url"]
+      },
+      "RequestEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "status": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestStatus" }]
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "example": "Мастер приедет завтра утром"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-27T09:12:00.000Z"
+          }
+        },
+        "required": ["id", "status", "comment", "createdAt"]
+      },
+      "RequestDetailsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8"
+          },
+          "number": {
+            "type": "integer",
+            "example": 148,
+            "description": "Номер заявки для отображения"
+          },
+          "houseId": { "type": "integer", "example": 1 },
+          "title": {
+            "type": "string",
+            "example": "Течёт кровля над пятым подъездом"
+          },
+          "category": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestCategory" }]
+          },
+          "locationType": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestLocationType" }]
+          },
+          "visibility": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestVisibility" }]
+          },
+          "status": {
+            "description": "submitted: отправлена, in_review: на рассмотрении, in_progress: решается, resolved: ждёт подтверждения, closed: закрыта, cancelled: отменена",
+            "allOf": [{ "$ref": "#/components/schemas/RequestStatus" }]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-27T09:12:00.000Z"
+          },
+          "author": {
+            "nullable": true,
+            "description": "Автор, null если аккаунт удалён",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/RequestAuthorDto" }]
+          },
+          "isMine": {
+            "type": "boolean",
+            "example": true,
+            "description": "Заявка текущего пользователя"
+          },
+          "subscribersCount": {
+            "type": "integer",
+            "example": 12,
+            "description": "Сколько жителей подписано"
+          },
+          "isSubscribed": {
+            "type": "boolean",
+            "example": false,
+            "description": "Вы подписаны на эту заявку"
+          },
+          "description": {
+            "type": "string",
+            "example": "После дождя вода течёт по стене у лифта"
+          },
+          "locationText": {
+            "type": "string",
+            "nullable": true,
+            "example": "Пятый подъезд, девятый этаж"
+          },
+          "apartment": {
+            "nullable": true,
+            "description": "Квартира видна автору и админам, для остальных null",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/RequestApartmentDto" }]
+          },
+          "attachments": {
+            "description": "Фото и документы заявки",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FileDto" }
+          },
+          "events": {
+            "description": "История обработки от старых событий к новым",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RequestEventDto" }
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "houseId",
+          "title",
+          "category",
+          "locationType",
+          "visibility",
+          "status",
+          "createdAt",
+          "author",
+          "isMine",
+          "subscribersCount",
+          "isSubscribed",
+          "description",
+          "locationText",
+          "apartment",
+          "attachments",
+          "events"
+        ]
+      },
+      "RequestsScope": { "type": "string", "enum": ["mine", "house"] },
+      "RequestsStatusFilter": {
+        "type": "string",
+        "enum": [
+          "all",
+          "open",
+          "completed",
+          "submitted",
+          "in_review",
+          "in_progress",
+          "resolved",
+          "closed",
+          "cancelled"
+        ]
+      },
+      "RequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8"
+          },
+          "number": {
+            "type": "integer",
+            "example": 148,
+            "description": "Номер заявки для отображения"
+          },
+          "houseId": { "type": "integer", "example": 1 },
+          "title": {
+            "type": "string",
+            "example": "Течёт кровля над пятым подъездом"
+          },
+          "category": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestCategory" }]
+          },
+          "locationType": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestLocationType" }]
+          },
+          "visibility": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestVisibility" }]
+          },
+          "status": {
+            "description": "submitted: отправлена, in_review: на рассмотрении, in_progress: решается, resolved: ждёт подтверждения, closed: закрыта, cancelled: отменена",
+            "allOf": [{ "$ref": "#/components/schemas/RequestStatus" }]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-27T09:12:00.000Z"
+          },
+          "author": {
+            "nullable": true,
+            "description": "Автор, null если аккаунт удалён",
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/RequestAuthorDto" }]
+          },
+          "isMine": {
+            "type": "boolean",
+            "example": true,
+            "description": "Заявка текущего пользователя"
+          },
+          "subscribersCount": {
+            "type": "integer",
+            "example": 12,
+            "description": "Сколько жителей подписано"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "houseId",
+          "title",
+          "category",
+          "locationType",
+          "visibility",
+          "status",
+          "createdAt",
+          "author",
+          "isMine",
+          "subscribersCount"
+        ]
+      },
+      "RequestsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RequestDto" }
+          },
+          "page": { "type": "integer", "example": 1 },
+          "limit": { "type": "integer", "example": 20 },
+          "total": {
+            "type": "integer",
+            "example": 42,
+            "description": "Всего заявок с учётом фильтров и доступа"
+          }
+        },
+        "required": ["items", "page", "limit", "total"]
+      },
+      "CreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Течёт кровля над пятым подъездом",
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "example": "После дождя вода течёт по стене у лифта",
+            "maxLength": 10000
+          },
+          "category": {
+            "description": "management: УК, electrician: электрик, plumber: сантехник, duty: дежурная служба",
+            "allOf": [{ "$ref": "#/components/schemas/RequestCategory" }]
+          },
+          "locationType": {
+            "description": "apartment: квартира, entrance: подъезд, yard: двор",
+            "allOf": [{ "$ref": "#/components/schemas/RequestLocationType" }]
+          },
+          "apartmentId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295,
+            "nullable": true,
+            "description": "Своя подтверждённая квартира, обязательно для apartment"
+          },
+          "locationText": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "example": "Подъезд 5, девятый этаж, у лифта",
+            "description": "Уточнение места, обязательно для подъезда и двора"
+          },
+          "visibility": {
+            "default": "private",
+            "description": "private: только по ссылке, house: в списке дома. По ссылке могут открыть подтверждённые жители",
+            "allOf": [{ "$ref": "#/components/schemas/RequestVisibility" }]
+          },
+          "attachmentIds": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "default": [],
+            "maxItems": 5,
+            "uniqueItems": true,
+            "description": "ID своих файлов, загруженных в этом доме"
+          }
+        },
+        "required": ["title", "description", "category", "locationType"]
+      },
+      "AdminHouseStatsDto": {
+        "type": "object",
+        "properties": {
+          "newRequestsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 12,
+            "description": "Новые заявки в УК со статусом submitted, включая приватные"
+          },
+          "openRequestsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 22,
+            "description": "Все заявки в УК кроме closed и cancelled, включая новые и приватные"
+          },
+          "pendingJoinRequestsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 12,
+            "description": "Актуальные заявки на вступление со статусом pending, по каждой квартире отдельно"
+          },
+          "residentsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 286,
+            "description": "Пользователи с approved в этом доме, каждый считается один раз"
+          },
+          "activeMeetingsCount": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 2,
+            "description": "Уже начавшиеся и ещё не завершённые собрания, без отменённых"
+          }
+        },
+        "required": [
+          "newRequestsCount",
+          "openRequestsCount",
+          "pendingJoinRequestsCount",
+          "residentsCount",
+          "activeMeetingsCount"
+        ]
+      },
+      "AdminRequestPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "abf319d9-b173-4aeb-b9bb-7ca6e15e6df8"
+          },
+          "number": {
+            "type": "integer",
+            "example": 148,
+            "description": "Номер заявки для отображения"
+          },
+          "title": {
+            "type": "string",
+            "example": "Течёт кровля над пятым подъездом"
+          },
+          "category": {
+            "allOf": [{ "$ref": "#/components/schemas/RequestCategory" }]
+          },
+          "status": {
+            "description": "submitted: отправлена, in_review: на рассмотрении, in_progress: решается, resolved: ждёт подтверждения, closed: закрыта, cancelled: отменена",
+            "allOf": [{ "$ref": "#/components/schemas/RequestStatus" }]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-27T09:12:00.000Z"
+          }
+        },
+        "required": ["id", "number", "title", "category", "status", "createdAt"]
+      },
+      "AdminJoinRequestPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 25,
+            "description": "ID заявки на вступление"
+          },
+          "apartmentNumber": { "type": "string", "example": "112" },
+          "displayName": { "type": "string", "example": "Мане Айрапетян" },
+          "relationship": {
+            "allOf": [{ "$ref": "#/components/schemas/ApartmentRelationship" }]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-27T09:12:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "apartmentNumber",
+          "displayName",
+          "relationship",
+          "createdAt"
+        ]
+      },
+      "AdminHouseAttentionDto": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "maxItems": 5,
+            "description": "До 5 заявок в УК со статусом submitted, сначала самые старые",
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminRequestPreviewDto" }
+          },
+          "joinRequests": {
+            "maxItems": 5,
+            "description": "До 5 актуальных заявок на вступление со статусом pending, сначала самые старые",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJoinRequestPreviewDto"
+            }
+          }
+        },
+        "required": ["requests", "joinRequests"]
+      },
+      "AdminHouseOverviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "house": { "$ref": "#/components/schemas/HousePreviewDto" },
+          "stats": { "$ref": "#/components/schemas/AdminHouseStatsDto" },
+          "attention": { "$ref": "#/components/schemas/AdminHouseAttentionDto" }
+        },
+        "required": ["house", "stats", "attention"]
+      }
+    }
+  },
+  "security": [{ "max": [] }]
+}

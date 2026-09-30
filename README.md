@@ -11,11 +11,23 @@
 - [Бот и мини-приложение в MAX](https://max.ru/t364_hakaton_max_bot)
 - [Сайт приложения](https://max-hackathon.kuz.to)
 - [Документация API](https://max-hackathon.kuz.to/api/docs)
-- [OpenAPI](https://max-hackathon.kuz.to/api/openapi.json)
+- [OpenAPI в репозитории](./openapi.json)
+- [OpenAPI работающего API](https://max-hackathon.kuz.to/api/openapi.json)
 - [Сервер](https://github.com/Hear-You-Apps/max-hackathon-backend)
 - [Интерфейс и инструкция его запуска](https://github.com/Hear-You-Apps/max-hackathon-frontend)
 
 Базовый адрес API: `https://max-hackathon.kuz.to/api`. Для проверки приложения открывайте его через бота в MAX. При открытии сайта в обычном браузере данные авторизации MAX отсутствуют.
+
+## Схема API
+
+В `openapi.json` сохранена схема OpenAPI 3.0 с описанием методов и форматов для сдачи проекта. Файл должен соответствовать сдаваемой версии кода.
+
+После изменения API обновите схему из запущенной локальной версии бэкенда и сохраните её в том же коммите:
+
+```bash
+curl --fail --silent --show-error http://localhost:3000/api/openapi.json -o openapi.json
+npx prettier --write openapi.json
+```
 
 ## Основной сценарий
 
