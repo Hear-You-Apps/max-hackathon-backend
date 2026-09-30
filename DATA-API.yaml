@@ -1,0 +1,898 @@
+# Состав файла соответствует перечню на странице 10 требований «Умный город».
+# Имена полей и версия ниже приняты командой: шаблон организаторов не предоставлен.
+# Перед загрузкой на платформу оценки нужно сверить формат и версию её схемы.
+version: 'draft-1'
+solution: Совет дома
+base_url: https://max-hackathon.kuz.to/api
+openapi_url: https://max-hackathon.kuz.to/api/openapi.json
+format_status: requires_organizer_schema
+
+instructions:
+  - Все проверки выполняются по порядку. После неуспешного шага проход останавливается
+  - URL запроса получается соединением base_url и path без повторного /api
+  - Значения ${NAME} берутся из inputs или capture предыдущих ответов
+  - Подстановка целого значения сохраняет его тип, например числовой ID в JSON
+  - Подстановка внутри строки превращает значение в текст, например meeting_${MEETING_ID}
+  - Имена в capture получают значения по JSON Pointer из тела ответа
+  - В assertions equals проверяет равенство, contains ищет элемент массива с указанными полями
+  - Отсутствующие query и path_params означают пустые параметры, отсутствие body означает запрос без тела
+  - json_schema описывает минимальную структуру по JSON Schema draft-07, остальные поля разрешены
+  - content_type сравнивается без параметров вроде charset, для 204 ожидается пустое тело
+  - Для multipart заголовок Content-Type с boundary формирует HTTP-клиент
+  - Для бинарного ответа matches_file означает побайтовое совпадение с исходным файлом
+  - Это описание проверок, отдельная программа для их запуска в репозиторий не входит
+
+preconditions:
+  - Используется демонстрационный дом с действующим приглашением и вымышленными данными
+  - В доме до проверки не больше 98 текущих собраний и опросов вместе, чтобы новые записи попали на первую страницу списка
+  - Во время прохода другие пользователи не создают данные и не меняют записи этой проверки
+  - Первый пользователь MAX ещё не состоит в этом доме и не имеет ожидающих заявок в него
+  - Второй пользователь MAX уже имеет membership.status approved и роль resident в этом же доме
+  - Пользователи разные. Их initData получены при открытии приложения через одного бота MAX
+  - У первого пользователя после одобрения появятся роль resident и подтверждённая квартира owner
+  - Проверки создают вступление, файл, заявку, собрание и опрос. Создание и смена статуса могут вызвать сообщения бота
+  - Для повторного полного прохода нужна та же начальная ситуация, например другая пара пользователей в демонстрационном доме
+  - Подготовка дома и второго участника описана в README. Миграции сами не создают демонстрационные данные
+  - Секреты передаются проверяющему отдельно. Токен бота для этих HTTP-запросов не нужен
+
+inputs:
+  RESIDENT_INIT_DATA:
+    type: string
+    secret: true
+    source: window.WebApp.initData первого пользователя MAX, без дополнительного кодирования
+  NEIGHBOR_INIT_DATA:
+    type: string
+    secret: true
+    source: window.WebApp.initData второго пользователя MAX, без дополнительного кодирования
+  INVITATION_CODE:
+    type: string
+    source: Действующий код демонстрационного дома от команды
+  APARTMENT_NUMBER:
+    type: string
+    source: Номер демонстрационной квартиры первого пользователя
+  ATTACHMENT_PATH:
+    type: string
+    source: Путь к настоящему PNG-файлу размером от 1 байта до 10 МиБ, без личных данных
+  ENDS_AT:
+    type: string
+    format: date-time
+    source: Дата в ISO 8601 с часовым поясом, минимум на сутки позже начала проверки
+
+roles:
+  anonymous:
+    description: Без авторизации, в том числе для публичных debug-методов демонстрации
+  applicant:
+    description: Первый пользователь после /init, до одобрения вступления
+    credentials: RESIDENT_INIT_DATA
+  resident:
+    description: Тот же первый пользователь после одобрения, resident с подтверждённой квартирой owner
+    credentials: RESIDENT_INIT_DATA
+  neighbor:
+    description: Второй подтверждённый житель того же дома, не автор заявки
+    credentials: NEIGHBOR_INIT_DATA
+
+schemas:
+  error: &error
+    type: object
+    required: [statusCode, error, message]
+    properties:
+      statusCode: { type: integer }
+      error: { type: string }
+      message:
+        oneOf:
+          - { type: string }
+          - { type: array, items: { type: string } }
+      code: { type: string }
+  house_preview: &house_preview
+    type: object
+    required:
+      [
+        id,
+        address,
+        managementCompanyName,
+        apartmentsCount,
+        entrancesCount,
+        residentsCount,
+      ]
+    properties:
+      id: { type: integer }
+      address: { type: string }
+      managementCompanyName: { type: [string, 'null'] }
+      apartmentsCount: { type: [integer, 'null'] }
+      entrancesCount: { type: [integer, 'null'] }
+      residentsCount: { type: integer, minimum: 0 }
+  membership: &membership
+    type: object
+    required: [id, status, displayName, roles, apartments, revocationReason]
+    properties:
+      id: { type: integer }
+      status: { type: string }
+      displayName: { type: string }
+      revocationReason: { type: [string, 'null'] }
+      roles:
+        type: array
+        items: { enum: [resident, organizer, house_council, house_admin] }
+      apartments:
+        type: array
+        items:
+          type: object
+          required: [id, number, relationship, verificationStatus]
+          properties:
+            id: { type: integer }
+            number: { type: string }
+            relationship: { enum: [owner, tenant] }
+            verificationStatus: { type: string }
+  my_houses: &my_houses
+    type: object
+    required: [houses, joinRequests]
+    properties:
+      houses:
+        type: array
+        items:
+          allOf:
+            - *house_preview
+            - type: object
+              required: [membership, adminContactUrl]
+              properties:
+                membership: *membership
+                adminContactUrl: { type: [string, 'null'] }
+      joinRequests: { type: array, items: { type: object } }
+  init: &init
+    allOf:
+      - *my_houses
+      - type: object
+        required: [user]
+        properties:
+          user:
+            type: object
+            required:
+              [
+                id,
+                firstName,
+                lastName,
+                username,
+                photoUrl,
+                notificationsEnabled,
+              ]
+            properties:
+              id: { type: integer }
+              firstName: { type: string }
+              lastName: { type: [string, 'null'] }
+              username: { type: [string, 'null'] }
+              photoUrl: { type: [string, 'null'] }
+              notificationsEnabled: { type: boolean }
+  file: &file
+    type: object
+    required: [id, name, mimeType, size, url]
+    properties:
+      id: { type: string, format: uuid }
+      name: { type: string }
+      mimeType: { type: string }
+      size: { type: integer, minimum: 1, maximum: 10485760 }
+      url: { type: string }
+  request: &request
+    type: object
+    required:
+      - id
+      - number
+      - houseId
+      - title
+      - category
+      - locationType
+      - visibility
+      - status
+      - createdAt
+      - author
+      - isMine
+      - subscribersCount
+    properties:
+      id: { type: string, format: uuid }
+      number: { type: integer }
+      houseId: { type: integer }
+      title: { type: string }
+      category: { enum: [management, electrician, plumber, duty] }
+      locationType: { enum: [apartment, entrance, yard] }
+      visibility: { enum: [private, house] }
+      status:
+        {
+          enum:
+            [submitted, in_review, in_progress, resolved, closed, cancelled],
+        }
+      createdAt: { type: string, format: date-time }
+      author: { type: [object, 'null'] }
+      isMine: { type: boolean }
+      subscribersCount: { type: integer, minimum: 0 }
+  request_details: &request_details
+    allOf:
+      - *request
+      - type: object
+        required:
+          [
+            isSubscribed,
+            description,
+            locationText,
+            apartment,
+            attachments,
+            events,
+          ]
+        properties:
+          isSubscribed: { type: boolean }
+          description: { type: string }
+          locationText: { type: [string, 'null'] }
+          apartment: { type: [object, 'null'] }
+          attachments: { type: array, items: *file }
+          events:
+            type: array
+            items:
+              type: object
+              required: [id, status, comment, createdAt]
+              properties:
+                id: { type: integer }
+                status: { type: string }
+                comment: { type: [string, 'null'] }
+                createdAt: { type: string, format: date-time }
+  requests_page: &requests_page
+    type: object
+    required: [items, page, limit, total]
+    properties:
+      items: { type: array, items: *request }
+      page: { type: integer }
+      limit: { type: integer }
+      total: { type: integer, minimum: 0 }
+  meeting: &meeting
+    type: object
+    required:
+      [
+        id,
+        type,
+        houseId,
+        title,
+        format,
+        audience,
+        status,
+        startsAt,
+        endsAt,
+        questions,
+        participation,
+      ]
+    properties:
+      id: { type: integer }
+      type: { const: meeting }
+      houseId: { type: integer }
+      title: { type: string }
+      format: { enum: [in_person, absentee, mixed] }
+      audience: { enum: [all_residents, owners] }
+      status: { enum: [scheduled, active, closed, cancelled] }
+      startsAt: { type: string, format: date-time }
+      endsAt: { type: string, format: date-time }
+      participation: { type: [object, 'null'] }
+      questions:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [id, title, myVote, results]
+          properties:
+            id: { type: integer }
+            title: { type: string }
+            myVote: { enum: [yes, no, abstain, null] }
+            results:
+              type: object
+              required: [yes, no, abstain]
+              properties:
+                yes: { type: integer }
+                no: { type: integer }
+                abstain: { type: integer }
+  poll: &poll
+    type: object
+    required:
+      [
+        id,
+        type,
+        houseId,
+        question,
+        audience,
+        allowMultiple,
+        endsAt,
+        status,
+        resultsFinal,
+        responsesCount,
+        myOptionIds,
+        options,
+      ]
+    properties:
+      id: { type: integer }
+      type: { const: poll }
+      houseId: { type: integer }
+      question: { type: string }
+      audience: { enum: [all_residents, owners] }
+      allowMultiple: { type: boolean }
+      endsAt: { type: string, format: date-time }
+      status: { enum: [active, closed] }
+      resultsFinal: { type: boolean }
+      responsesCount: { type: integer }
+      myOptionIds: { type: array, items: { type: integer } }
+      options:
+        type: array
+        minItems: 2
+        items:
+          type: object
+          required: [id, title, votesCount, percent]
+          properties:
+            id: { type: integer }
+            title: { type: string }
+            votesCount: { type: integer }
+            percent: { type: integer }
+
+checks:
+  - id: health
+    description: API и база данных доступны
+    role: anonymous
+    request:
+      method: GET
+      path: /health
+      headers: { Accept: application/json }
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [status, service, database, timestamp]
+        properties:
+          status: { const: ok }
+          service: { const: max-hackathon-backend }
+          database: { const: up }
+          timestamp: { type: string, format: date-time }
+
+  - id: auth_required
+    description: Дома пользователя недоступны без MAX-авторизации
+    role: anonymous
+    request:
+      method: GET
+      path: /houses/me
+      headers: { Accept: application/json }
+    response:
+      status_codes: [401]
+      content_type: application/json
+      json_schema: *error
+      assertions:
+        - { pointer: /statusCode, equals: 401 }
+
+  - id: init_resident
+    description: Создать или обновить профиль первого пользователя
+    role: applicant
+    request:
+      method: POST
+      path: /init
+      headers: &resident_headers
+        Authorization: Bearer ${RESIDENT_INIT_DATA}
+        Accept: application/json
+        Content-Type: application/json
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *init
+    capture:
+      RESIDENT_USER_ID: /user/id
+
+  - id: init_neighbor
+    description: Инициализировать второго пользователя
+    role: neighbor
+    request:
+      method: POST
+      path: /init
+      headers: &neighbor_headers
+        Authorization: Bearer ${NEIGHBOR_INIT_DATA}
+        Accept: application/json
+        Content-Type: application/json
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *init
+
+  - id: search_house
+    description: Найти дом по действующему приглашению
+    role: applicant
+    request:
+      method: GET
+      path: /houses/search
+      query: { code: '${INVITATION_CODE}' }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [house, membership, joinRequest]
+        properties:
+          house: *house_preview
+          membership: { type: 'null' }
+          joinRequest: { type: 'null' }
+    capture:
+      HOUSE_ID: /house/id
+
+  - id: join_house
+    description: Отправить заявку на вступление как собственник
+    role: applicant
+    request:
+      method: POST
+      path: /houses/join
+      headers: *resident_headers
+      body:
+        code: '${INVITATION_CODE}'
+        apartmentNumber: '${APARTMENT_NUMBER}'
+        displayName: Участник проверки
+        relationship: owner
+        notificationsEnabled: false
+    response:
+      status_codes: [201]
+      content_type: application/json
+      json_schema:
+        type: object
+        required:
+          [
+            id,
+            house,
+            apartmentNumber,
+            displayName,
+            relationship,
+            status,
+            rejectionReason,
+          ]
+        properties:
+          id: { type: integer }
+          house: *house_preview
+          apartmentNumber: { type: string }
+          displayName: { type: string }
+          relationship: { const: owner }
+          status: { const: pending }
+          rejectionReason: { type: 'null' }
+      assertions:
+        - { pointer: /house/id, equals: '${HOUSE_ID}' }
+    capture:
+      JOIN_REQUEST_ID: /id
+
+  - id: pending_house_access
+    description: Ожидающая заявка ещё не даёт доступ к сведениям о доме
+    role: applicant
+    request:
+      method: GET
+      path: /houses/{houseId}
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers: *resident_headers
+    response:
+      status_codes: [404]
+      content_type: application/json
+      json_schema: *error
+      assertions:
+        - { pointer: /statusCode, equals: 404 }
+        - { pointer: /code, equals: HOUSE_NOT_AVAILABLE }
+
+  - id: approve_join
+    description: Подтвердить вступление и квартиру через debug-метод демонстрации
+    role: anonymous
+    request:
+      method: POST
+      path: /debug/houses/approve
+      headers: { Content-Type: application/json }
+      body: { requestId: '${JOIN_REQUEST_ID}' }
+    response: &no_content
+      status_codes: [204]
+      body: empty
+
+  - id: my_houses
+    description: У первого пользователя появилось подтверждённое членство
+    role: resident
+    request:
+      method: GET
+      path: /houses/me
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *my_houses
+      assertions:
+        - pointer: /houses
+          contains:
+            id: '${HOUSE_ID}'
+            membership: { status: approved }
+
+  - id: house_details
+    description: Получить сведения о доме после подтверждения
+    role: resident
+    request:
+      method: GET
+      path: /houses/{houseId}
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [house, contacts, utilities, upcomingEvents]
+        properties:
+          house: *house_preview
+          contacts: { type: array, items: { type: object } }
+          utilities:
+            type: object
+            required: [paymentUrl]
+            properties:
+              paymentUrl: { type: [string, 'null'] }
+          upcomingEvents: { type: array, maxItems: 3, items: { type: object } }
+      assertions:
+        - { pointer: /house/id, equals: '${HOUSE_ID}' }
+
+  - id: upload_file
+    description: Загрузить PNG для заявки
+    role: resident
+    request:
+      method: POST
+      path: /houses/{houseId}/files
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers:
+        Authorization: Bearer ${RESIDENT_INIT_DATA}
+        Accept: application/json
+      content_type: multipart/form-data
+      body:
+        file:
+          file_path: '${ATTACHMENT_PATH}'
+          filename: check.png
+          content_type: image/png
+    response:
+      status_codes: [201]
+      content_type: application/json
+      json_schema: *file
+      assertions:
+        - { pointer: /mimeType, equals: image/png }
+    capture:
+      FILE_ID: /id
+
+  - id: create_request
+    description: Создать заявку с вложением, видимую соседям
+    role: resident
+    request:
+      method: POST
+      path: /houses/{houseId}/requests
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers: *resident_headers
+      body:
+        title: Проверка освещения во дворе
+        description: Учебная заявка для проверки API. Не горит фонарь у входа во двор
+        category: electrician
+        locationType: yard
+        locationText: У входа во двор
+        visibility: house
+        attachmentIds: ['${FILE_ID}']
+    response:
+      status_codes: [201]
+      content_type: application/json
+      json_schema: *request_details
+      assertions:
+        - { pointer: /houseId, equals: '${HOUSE_ID}' }
+        - { pointer: /status, equals: submitted }
+        - { pointer: /isMine, equals: true }
+        - { pointer: /author/id, equals: '${RESIDENT_USER_ID}' }
+        - { pointer: /attachments, contains: { id: '${FILE_ID}' } }
+    capture:
+      REQUEST_ID: /id
+
+  - id: list_my_requests
+    description: Созданная заявка есть в списке своих заявок
+    role: resident
+    request:
+      method: GET
+      path: /houses/{houseId}/requests
+      path_params: { houseId: '${HOUSE_ID}' }
+      query: { scope: mine, status: all, page: 1, limit: 100 }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *requests_page
+      assertions:
+        - { pointer: /items, contains: { id: '${REQUEST_ID}', isMine: true } }
+
+  - id: list_house_requests
+    description: Сосед видит открытую заявку в списке дома
+    role: neighbor
+    request:
+      method: GET
+      path: /houses/{houseId}/requests
+      path_params: { houseId: '${HOUSE_ID}' }
+      query: { scope: house, status: all, page: 1, limit: 100 }
+      headers: *neighbor_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *requests_page
+      assertions:
+        - { pointer: /items, contains: { id: '${REQUEST_ID}', isMine: false } }
+
+  - id: subscribe_request
+    description: Сосед подписывается на изменения заявки
+    role: neighbor
+    request:
+      method: PUT
+      path: /requests/{requestId}/subscription
+      path_params: { requestId: '${REQUEST_ID}' }
+      headers: *neighbor_headers
+    response: *no_content
+
+  - id: subscribed_request
+    description: Карточка заявки отражает подписку соседа
+    role: neighbor
+    request:
+      method: GET
+      path: /requests/{requestId}
+      path_params: { requestId: '${REQUEST_ID}' }
+      headers: *neighbor_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *request_details
+      assertions:
+        - { pointer: /id, equals: '${REQUEST_ID}' }
+        - { pointer: /isSubscribed, equals: true }
+        - { pointer: /isMine, equals: false }
+
+  - id: download_attachment
+    description: Сосед может скачать вложение доступной ему заявки
+    role: neighbor
+    request:
+      method: GET
+      path: /files/{fileId}
+      path_params: { fileId: '${FILE_ID}' }
+      headers:
+        Authorization: Bearer ${NEIGHBOR_INIT_DATA}
+        Accept: image/png
+    response:
+      status_codes: [200]
+      content_type: image/png
+      body: binary
+      matches_file: '${ATTACHMENT_PATH}'
+
+  - id: change_request_status
+    description: Передать заявку в работу через debug-метод демонстрации
+    role: anonymous
+    request:
+      method: POST
+      path: /debug/requests/status
+      headers: { Content-Type: application/json }
+      body:
+        requestId: '${REQUEST_ID}'
+        status: in_progress
+        comment: Учебная проверка. Электрик принял заявку
+    response: *no_content
+
+  - id: request_status_saved
+    description: Автор видит сохранённый статус, комментарий и вложение
+    role: resident
+    request:
+      method: GET
+      path: /requests/{requestId}
+      path_params: { requestId: '${REQUEST_ID}' }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *request_details
+      assertions:
+        - { pointer: /id, equals: '${REQUEST_ID}' }
+        - { pointer: /status, equals: in_progress }
+        - { pointer: /attachments, contains: { id: '${FILE_ID}' } }
+        - pointer: /events
+          contains:
+            status: in_progress
+            comment: Учебная проверка. Электрик принял заявку
+
+  - id: unsubscribe_request
+    description: Сосед отключает подписку
+    role: neighbor
+    request:
+      method: DELETE
+      path: /requests/{requestId}/subscription
+      path_params: { requestId: '${REQUEST_ID}' }
+      headers: *neighbor_headers
+    response: *no_content
+
+  - id: unsubscribed_request
+    description: Отключение подписки сохранено
+    role: neighbor
+    request:
+      method: GET
+      path: /requests/{requestId}
+      path_params: { requestId: '${REQUEST_ID}' }
+      headers: *neighbor_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *request_details
+      assertions:
+        - { pointer: /isSubscribed, equals: false }
+
+  - id: create_meeting
+    description: Подтверждённый собственник создаёт заочное собрание
+    role: resident
+    request:
+      method: POST
+      path: /houses/{houseId}/meetings
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers: *resident_headers
+      body:
+        question: Учебная проверка. Заменить освещение во дворе?
+        format: absentee
+        audience: owners
+        endsAt: '${ENDS_AT}'
+    response:
+      status_codes: [201]
+      content_type: application/json
+      json_schema: *meeting
+      assertions:
+        - { pointer: /houseId, equals: '${HOUSE_ID}' }
+        - { pointer: /status, equals: active }
+        - { pointer: /format, equals: absentee }
+        - { pointer: /audience, equals: owners }
+        - { pointer: /participation, equals: null }
+    capture:
+      MEETING_ID: /id
+      QUESTION_ID: /questions/0/id
+
+  - id: vote_meeting
+    description: Собственник отвечает на вопрос собрания
+    role: resident
+    request:
+      method: PUT
+      path: /meetings/{meetingId}/votes
+      path_params: { meetingId: '${MEETING_ID}' }
+      headers: *resident_headers
+      body:
+        votes:
+          - { questionId: '${QUESTION_ID}', choice: 'yes' }
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [votes]
+        properties:
+          votes:
+            type: array
+            items:
+              type: object
+              required: [questionId, choice]
+              properties:
+                questionId: { type: integer }
+                choice: { enum: [yes, no, abstain] }
+      assertions:
+        - {
+            pointer: /votes,
+            contains: { questionId: '${QUESTION_ID}', choice: 'yes' },
+          }
+
+  - id: meeting_vote_saved
+    description: Ответ сохранился после повторного получения собрания
+    role: resident
+    request:
+      method: GET
+      path: /meetings/{itemId}
+      path_params: { itemId: 'meeting_${MEETING_ID}' }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *meeting
+      assertions:
+        - { pointer: /id, equals: '${MEETING_ID}' }
+        - {
+            pointer: /questions,
+            contains: { id: '${QUESTION_ID}', myVote: 'yes' },
+          }
+
+  - id: create_poll
+    description: Житель создаёт опрос для всех подтверждённых жителей
+    role: resident
+    request:
+      method: POST
+      path: /houses/{houseId}/polls
+      path_params: { houseId: '${HOUSE_ID}' }
+      headers: *resident_headers
+      body:
+        question: Учебная проверка. Где поставить новую скамейку?
+        options:
+          - { title: У входа во двор }
+          - { title: У детской площадки }
+        allowMultiple: false
+        audience: all_residents
+        endsAt: '${ENDS_AT}'
+    response:
+      status_codes: [201]
+      content_type: application/json
+      json_schema: *poll
+      assertions:
+        - { pointer: /houseId, equals: '${HOUSE_ID}' }
+        - { pointer: /status, equals: active }
+        - { pointer: /allowMultiple, equals: false }
+    capture:
+      POLL_ID: /id
+      OPTION_ID: /options/0/id
+
+  - id: vote_poll
+    description: Сосед выбирает один вариант опроса
+    role: neighbor
+    request:
+      method: PUT
+      path: /polls/{pollId}/votes
+      path_params: { pollId: '${POLL_ID}' }
+      headers: *neighbor_headers
+      body: { optionIds: ['${OPTION_ID}'] }
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *poll
+      assertions:
+        - { pointer: /id, equals: '${POLL_ID}' }
+        - { pointer: /myOptionIds, equals: ['${OPTION_ID}'] }
+
+  - id: poll_vote_saved
+    description: Ответ сохранился после повторного получения опроса
+    role: neighbor
+    request:
+      method: GET
+      path: /meetings/{itemId}
+      path_params: { itemId: 'poll_${POLL_ID}' }
+      headers: *neighbor_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema: *poll
+      assertions:
+        - { pointer: /id, equals: '${POLL_ID}' }
+        - { pointer: /myOptionIds, equals: ['${OPTION_ID}'] }
+
+  - id: list_meetings_and_polls
+    description: Собрание и опрос появились в общем списке дома
+    role: resident
+    request:
+      method: GET
+      path: /houses/{houseId}/meetings
+      path_params: { houseId: '${HOUSE_ID}' }
+      query: { period: actual, page: 1, limit: 100 }
+      headers: *resident_headers
+    response:
+      status_codes: [200]
+      content_type: application/json
+      json_schema:
+        type: object
+        required: [items, page, limit, total]
+        properties:
+          items:
+            type: array
+            items:
+              type: object
+              required: [id, type, houseId]
+              properties:
+                id: { type: integer }
+                type: { enum: [meeting, poll] }
+                houseId: { type: integer }
+          page: { type: integer }
+          limit: { type: integer }
+          total: { type: integer }
+      assertions:
+        - { pointer: /items, contains: { id: '${MEETING_ID}', type: meeting } }
+        - { pointer: /items, contains: { id: '${POLL_ID}', type: poll } }
+
+  - id: invalid_request_id
+    description: Неверный UUID заявки отклоняется при проверке параметров
+    role: resident
+    request:
+      method: GET
+      path: /requests/{requestId}
+      path_params: { requestId: not-a-uuid }
+      headers: *resident_headers
+    response:
+      status_codes: [400]
+      content_type: application/json
+      json_schema: *error
+      assertions:
+        - { pointer: /statusCode, equals: 400 }
