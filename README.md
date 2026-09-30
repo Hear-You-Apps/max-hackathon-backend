@@ -1,114 +1,304 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Совет дома: сервер
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+«Совет дома» помогает жителям участвовать в собраниях и опросах, отправлять заявки в службы, следить за их обработкой и находить контакты своего дома. Всё это доступно через мини-приложение и бота в MAX. Соседи могут присоединиться к одной заявке и получать сообщения об изменении её статуса.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Проект команды «Слышу Тебя» для трека «Умный город» хакатона MAX. Основные пользователи: жители и собственники квартир, совет дома и управляющая организация.
 
-## Description
+В этом репозитории находятся API, работа с MySQL, хранение вложений и бот. Интерфейс находится в отдельном репозитории.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Ссылки
 
-## Project setup
+- [Бот и мини-приложение в MAX](https://max.ru/t364_hakaton_max_bot)
+- [Сайт приложения](https://max-hackathon.kuz.to)
+- [Документация API](https://max-hackathon.kuz.to/api/docs)
+- [OpenAPI](https://max-hackathon.kuz.to/api/openapi.json)
+- [Сервер](https://github.com/Hear-You-Apps/max-hackathon-backend)
+- [Интерфейс и инструкция его запуска](https://github.com/Hear-You-Apps/max-hackathon-frontend)
+
+Базовый адрес API: `https://max-hackathon.kuz.to/api`. Для проверки приложения открывайте его через бота в MAX. При открытии сайта в обычном браузере данные авторизации MAX отсутствуют.
+
+## Основной сценарий
+
+1. Житель открывает приложение и вводит код дома.
+2. Указывает квартиру, имя и отношение к квартире: собственник или наниматель.
+3. После подтверждения получает доступ к собраниям, заявкам и информации о доме.
+4. Голосует по вопросам дома или создаёт заявку с описанием и фотографией.
+5. Следит за историей заявки. Соседи могут подписаться на неё, а бот сообщает об изменении статуса.
+
+В демонстрационной версии вступление подтверждается через `debug: approve request`, а статус заявки меняется в блоке «Дебаг заявки». Отдельная учётная запись сотрудника УК для этих действий не нужна.
+
+## Что реализовано
+
+- Авторизация по подписанным данным запуска MAX и создание профиля при первом входе
+- Поиск дома по приглашению, вступление и выход из дома
+- Проверка членства, ролей и подтверждения квартиры на сервере
+- Информация о доме, контакты, события и ссылки на чаты
+- Создание собраний и опросов через API, текущие и прошедшие события
+- Голосование, изменение голоса до окончания срока и отметка об участии
+- Заявки с вложениями, фильтры, история статусов и подписки соседей
+- Сводка дома для администратора через API
+- Приветствие бота и сообщения о новых собраниях, опросах и статусах заявок
+
+## Устройство проекта
+
+Мини-приложение получает данные запуска через MAX Bridge и передаёт их в API. NestJS проверяет подпись MAX и доступ пользователя к дому. Сервисы работают с MySQL через Prisma. Вложения хранятся на диске, их описание и связи с заявками находятся в БД. Сообщения отправляются через MAX Bot API.
+
+Стек: Node.js 24, TypeScript, NestJS 12, Prisma 7 и MySQL. Установка выполняется через `npm ci`.
+
+- `src/main.ts`: HTTP-сервер, префикс `/api`, проверка входных данных и Swagger
+- `src/auth`: проверка подписи MAX
+- `src/modules/init`, `users`: вход, профиль и уведомления
+- `src/modules/houses`, `admin-houses`: дома, квартиры, членство и сводка администратора
+- `src/modules/meetings`, `polls`: собрания, опросы и голоса
+- `src/modules/requests`, `files`: заявки, подписки и вложения
+- `src/modules/max-bot`: приём событий MAX и отправка сообщений
+- `src/modules/debug`: действия для демонстрации
+- `src/modules/health`: проверка сервера и БД
+- `prisma/schema.prisma`: модель данных
+- `prisma/migrations`: изменения схемы БД
+
+## Окружение и зависимости
+
+Нужны MySQL с созданной базой, токен бота MAX и доступ к сети. Для разработки без Docker нужны Node.js 24 и npm. Для запуска в контейнерах нужны Docker Engine и Docker Compose v2.
+
+При первом запуске создайте `.env` из примера. Существующий файл с настройками не перезаписывайте.
 
 ```bash
-$ npm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+Рабочие значения токена, пароля БД и секрета приёма событий команда передаёт отдельно. В README они не публикуются.
+
+Переменные приложения:
+
+- `NODE_ENV`: `development`, `production` или `test`. По умолчанию `development`, в Docker задано `production`
+- `PORT`: порт API при запуске через npm, по умолчанию `3000`. В контейнере всегда `3000`
+- `CORS_ORIGINS`: разрешённые адреса интерфейса через запятую. Для разработки, например, `http://localhost:5173,http://localhost:3004`
+- `UPLOADS_DIR`: каталог вложений. По умолчанию `./uploads`, в Docker `/app/uploads`
+- `MAX_BOT_TOKEN`: обязательный токен бота, к которому подключено мини-приложение
+- `MAX_BOT_USERNAME`: имя бота без `@`, по умолчанию `t364_hakaton_max_bot`
+- `MAX_WEBHOOK_SECRET`: секрет проверки входящих событий MAX. При пустом значении обработчик событий возвращает `503`
+- `MAX_WEBHOOK_URL`: публичный HTTPS-адрес `/api/max-bot/webhook` для команды `npm run bot:subscribe`
+- `DB_HOST`: адрес MySQL, доступный из процесса API или контейнера
+- `DB_PORT`: порт MySQL, по умолчанию `3306`
+- `DB_NAME`: имя существующей базы
+- `DB_USER`: пользователь базы
+- `DB_PASSWORD`: обязательный пароль пользователя базы
+
+Переменные Docker Compose:
+
+- `API_BIND_PORT`: порт API на компьютере, по умолчанию `3003`
+- `APP_IMAGE`: имя образа API, по умолчанию `max-hackathon-backend:local`
+- `MIGRATION_IMAGE`: имя образа миграций, по умолчанию `max-hackathon-backend-migration:local`
+
+В Docker порт опубликован только на `127.0.0.1`. Для доступа из MAX нужен внешний сервер с HTTPS, направляющий `/api` на API. Его настройка не входит в Compose.
+
+## Запуск через Docker
+
+Текущий `compose.yml` запускает API и предоставляет отдельную команду миграций. MySQL подготавливается заранее. Контейнеры используют внешнюю сеть `shared`. Если её ещё нет, создайте один раз:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker network create shared
 ```
 
-## Run tests
+Укажите доступный из контейнера `DB_HOST`. Значение `localhost` внутри контейнера означает сам контейнер, а не компьютер с MySQL. Если БД работает в другом контейнере, подключите её к `shared` и используйте имя этого контейнера.
+
+Проверьте настройки, соберите образы и посмотрите состояние миграций:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose config --quiet
+docker compose build api migrate
+docker compose run --rm migrate npx prisma migrate status
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Перед применением проверьте SQL ожидающих миграций в `prisma/migrations`. После проверки выполните:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose run --rm migrate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+После подготовки БД запуск API выполняется одной командой:
 
-## Observability
+```bash
+docker compose up -d --build --wait api
+```
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+При стандартных настройках доступны:
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+- API: `http://localhost:3003/api`
+- Swagger: `http://localhost:3003/api/docs`
+- OpenAPI: `http://localhost:3003/api/openapi.json`
+- Проверка сервера и БД: `http://localhost:3003/api/health`
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+Интерфейс запускается по инструкции своего репозитория. Общей Docker-конфигурации для двух репозиториев и MySQL пока нет.
 
-## Resources
+## Запуск для разработки
 
-Check out a few resources that may come in handy when working with NestJS:
+После заполнения `.env`:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm ci
+npm run db:generate
+npx prisma migrate status
+```
 
-## Support
+Если для выбранной БД есть ожидающие миграции, сначала проверьте их SQL, затем выполните:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run db:migrate:deploy
+```
 
-## Stay in touch
+Запуск с перезагрузкой при изменении кода:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+NODE_EXTRA_CA_CERTS=./certs/russian_trusted_root_ca.pem npm run start:dev
+```
 
-## License
+API будет доступен на `http://localhost:3000/api`. Дополнительный сертификат используется для соединений с MAX; в Docker он подключён автоматически.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Для проверки TypeScript и оформления:
+
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+```
+
+Prisma Client создаётся командой `npm run db:generate`. Файлы `src/generated/prisma` не редактируются вручную.
+
+## Подключение бота
+
+В настройках бота должно быть подключено мини-приложение с публичным HTTPS-адресом интерфейса. API должен использовать токен этого же бота.
+
+Для нового размещения заполните `MAX_WEBHOOK_URL` и `MAX_WEBHOOK_SECRET`, проверьте доступность URL снаружи, затем из исходного репозитория с установленными npm-зависимостями выполните:
+
+```bash
+npm run bot:subscribe
+```
+
+Команда регистрирует получение события `bot_started`. При начале диалога бот отправляет приветствие и кнопку открытия приложения. На уже настроенном стенде повторная регистрация при обычном запуске API не нужна.
+
+Пользователь должен начать диалог с ботом и включить уведомления в приложении. Бот сообщает о создании собрания или опроса, а также о смене статуса заявки. Автор и подписчики заявки получают сообщения, пока остаются подтверждёнными жителями дома.
+
+## Данные и доступ
+
+MySQL хранит профили MAX, дома, квартиры, приглашения, заявки на вступление, роли, контакты, события, собрания, опросы, голоса, заявки в службы и историю их обработки. Вложения лежат в `UPLOADS_DIR`; в Docker каталог сохраняется в томе `uploads`.
+
+В MVP используются заранее подготовленные сведения о домах и данные, введённые при проверке. Подключений к Госуслугам, ГИС ЖКХ, реестру собственников и платёжным системам нет. MAX используется для авторизации, открытия приложения и сообщений бота.
+
+Обычные методы API требуют заголовок `Authorization: Bearer <initData>`. Значение берётся из `window.WebApp.initData` открытого в MAX приложения и передаётся без дополнительного кодирования. Это не токен бота. В Swagger в поле Authorize вставляется само значение `initData`, без слова `Bearer`. Не сохраняйте его в README или примерах запросов.
+
+Первый запрос пользователя: `POST /api/init`. Он создаёт или обновляет профиль и возвращает пользователя, его дома и заявки на вступление. Пароля приложения нет.
+
+Доступ к сведениям о доме, его заявкам и голосованиям требует членства `approved`. До подтверждения доступны краткая карточка по приглашению и собственная заявка на вступление. Отношение к квартире `owner` или `tenant` хранится отдельно от роли в доме.
+
+Роли дома: `resident`, `organizer`, `house_council`, `house_admin`. Собрание может создать подтверждённый собственник или участник с ролью организатора, совета дома либо администратора. Опрос может создать подтверждённый житель. Допуск к голосованию зависит от выбранной аудитории: все подтверждённые жители или только собственники.
+
+В общем списке видны заявки с `visibility: house`. Значение `private` убирает заявку из этого списка, но подтверждённый житель того же дома может открыть её по прямой ссылке. Заявка другого дома недоступна.
+
+Поддерживаются вложения JPEG, PNG, WebP и PDF до 10 МБ каждое, не более пяти файлов на заявку. До привязки к заявке файл доступен только загрузившему его пользователю.
+
+## Данные для проверки
+
+На служебном слайде указан код демонстрационного дома `LIG-84-C9`. Если приглашение истекло или отозвано, актуальный код нужно получить у команды. Для проверки подписок и сообщений нужны два разных пользователя MAX в одном доме.
+
+Миграции создают структуру таблиц, но не демонстрационный дом. Автоматического заполнения новой БД и отдельного файла с тестовыми данными пока нет. Для отдельной базы порядок подготовки такой:
+
+1. Применить проверенные миграции и открыть `npm run db:studio`.
+2. Создать `House` с адресом и количеством квартир. Контакты, события и чаты добавляются связанными записями по `houseId`.
+3. Создать `HouseInvitation`: код, будущая дата `expiresAt`, пустое `revokedAt`. Для текущего интерфейса код должен иметь формат из 3, 2 и 2 символов, например `LIG-84-C9`.
+4. Открыть приложение в MAX, вступить в дом и подтвердить квартиру через debug-кнопку. Профиль и связи с квартирой создаются при прохождении сценария.
+5. При необходимости добавить роль `house_admin` через `HouseMemberRole` для созданного членства. Собрания и опросы подготовить через Swagger.
+
+Используйте вымышленные описания проблем и файлы без личных данных. Общую БД не нужно очищать для повторной проверки.
+
+## Порядок проверки
+
+### Вход и присоединение к дому
+
+1. Откройте бота в MAX, начните диалог и нажмите «Открыть приложение».
+2. Выберите «Ввести код дома», введите `LIG-84-C9`, нажмите «Найти дом». Должна появиться карточка дома.
+3. Нажмите «Это мой дом, продолжить», заполните квартиру и имя, выберите «Собственник» и отправьте форму. Появится экран ожидания подтверждения.
+4. Нажмите `debug: approve request`, затем закройте и снова откройте мини-приложение для обновления данных пользователя.
+5. Должны появиться разделы «Собрания», «Заявки» и «Дом». В ответе `POST /api/init` членство будет иметь статус `approved`.
+
+### Заявка и сообщение бота
+
+1. В разделе «Заявки» создайте заявку с темой, описанием, категорией и местом. Прикрепите изображение или PDF. Для проверки соседями включите «Показать соседям».
+2. После отправки должна открыться карточка с номером, вложениями и статусом «Отправлена».
+3. Второй пользователь MAX должен вступить в тот же дом, подтвердить квартиру и открыть заявку. По кнопке «Присоединиться» он подписывается на изменения.
+4. В блоке «Дебаг заявки» выберите другой статус, добавьте комментарий и нажмите «Изменить статус». Карточка и история должны обновиться.
+5. При включённых уведомлениях автору и подписчику придёт сообщение с кнопкой открытия этой заявки. Запрос смены статуса завершается раньше отправки сообщений.
+6. Повторно откройте карточку: статус, комментарий и вложения должны сохраниться.
+
+### Собрания и сведения о доме
+
+1. Откройте текущее заочное или очно-заочное собрание, которое уже началось и ещё не завершилось. Если подходящего нет, создайте его через Swagger от имени подтверждённого собственника.
+2. Выберите ответ на вопрос. Он должен сохраниться после повторного открытия; до окончания срока ответ можно изменить. Для очного собрания доступна отметка об участии.
+3. Откройте опрос и выберите вариант. После повторного открытия сохранится сделанный выбор.
+4. В разделе «Дом» проверьте адрес, контакты и ближайшие события из подготовленных данных.
+
+### Проверка через API
+
+Полные тела запросов и ответов описаны в Swagger. Основные вызовы и ожидаемые результаты:
+
+- `GET /api/health`: `200`, поля `status: ok` и `database: up`
+- `POST /api/init`: `200`, профиль, дома и заявки пользователя
+- `GET /api/houses/search?code=LIG-84-C9`: `200`, карточка дома
+- `POST /api/houses/join`: `201`, заявка на вступление со статусом `pending`
+- `POST /api/debug/houses/approve` с `requestId` заявки на вступление: `204`
+- `GET /api/houses/me`: `200`, подтверждённое членство и квартира
+- `POST /api/houses/{houseId}/files`: `201`, описание загруженного файла
+- `POST /api/houses/{houseId}/requests`: `201`, созданная заявка
+- `GET /api/requests/{requestId}`: `200`, карточка заявки. Здесь `requestId` является UUID, а не номером на экране
+- `POST /api/debug/requests/status`: `204`, изменение статуса и добавление события в историю
+- `GET /api/houses/{houseId}/meetings?period=actual`: `200`, текущие собрания и опросы
+
+Ошибки содержат `statusCode`, `error`, `message`; у предметных ошибок также есть `code`. `message` может быть строкой или списком сообщений проверки. Без MAX-авторизации защищённые методы возвращают `401`, для неизвестного или недоступного дома возвращается `404`, для истёкшего приглашения `410`.
+
+## Debug-функции демонстрации
+
+Методы `/api/debug` намеренно доступны без авторизации и используются кнопками приложения:
+
+- `POST /api/debug/houses/approve`: подтверждение вступления и квартиры
+- `POST /api/debug/houses/reject`: отклонение вступления
+- `POST /api/debug/requests/status`: изменение статуса заявки и комментарий
+- `DELETE /api/debug/users`: удаление выбранного пользователя и его связей с домами
+
+Это реальные изменения данных. Кнопка `delete user` в разделе «Дом» предназначена для повторной проверки входа своим пользователем. После удаления заново откройте приложение и пройдите вступление. Она не очищает дом и все созданные в нём материалы.
+
+## Остановка и повторный запуск
+
+Остановить API, сохранив контейнер и данные:
+
+```bash
+docker compose stop api
+```
+
+Запустить снова:
+
+```bash
+docker compose start api
+```
+
+Удалить контейнеры проекта, сохранив том вложений:
+
+```bash
+docker compose down
+```
+
+После этого используйте `docker compose up -d --wait api`. Не добавляйте `-v`, если вложения нужно сохранить. Внешняя MySQL этими командами не удаляется. При запуске через npm остановка выполняется через `Ctrl+C`, повторный запуск той же командой из раздела разработки.
+
+Для диагностики используйте `docker compose ps`, `docker compose logs --tail=100 api` и `/api/health`. При обновлении схемы сначала проверьте и примените новые миграции, затем запускайте новую версию API. Не используйте сброс базы вместо миграций.
+
+## Ограничения текущей версии
+
+- Голосование предназначено для предварительного сбора мнений. Приложение не оформляет юридически значимое ОСС
+- Генерация протоколов и бюллетеней, передача инициатив в УК, сроки исполнения и отчёты из презентации пока не реализованы
+- Создание домов, приглашений и назначение ролей пока требуют работы с БД
+- Создание собраний и опросов доступно через API; формы создания в текущем интерфейсе ещё нет
+- Обработка заявок и подтверждение вступления демонстрируются через debug-функции. Отдельных рабочих процессов диспетчера и мастера пока нет
+- Подтверждение решения заявки жителем, возврат на доработку и оценка выполнения пока не реализованы
+- Очередь сообщений бота хранится в памяти процесса. Нет постоянного хранилища очереди и гарантированной повторной отправки после сбоя
+- MySQL, HTTPS и подключение мини-приложения в MAX подготавливаются отдельно. Общего запуска всех компонентов одной Docker-командой пока нет
+- Полный проход в мобильном и веб-MAX и время Docker-сборки нужно проверять для конкретной сдаваемой версии
